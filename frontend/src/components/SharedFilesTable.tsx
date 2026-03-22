@@ -1,21 +1,23 @@
-/**
- * SharedFilesTable — "Shared With Me" tab table.
- * Preview always available; download conditional on permission.
- */
+/*Shared With Me tab table (Preview available, download needs permission)*/
 
-import { Download, Eye, FileText } from 'lucide-react'
-import { sanitizeText } from '../utils/sanitize'
-import { ActionButton, formatDate } from './DashboardUI'
-import type { SharedFile } from '../types'
+import { Download, Eye, FileText } from "lucide-react";
+import { sanitizeText } from "../utils/sanitize";
+import { ActionButton, formatDate } from "./DashboardUI";
+import type { SharedFile } from "../types";
 
 interface Props {
-  files: SharedFile[]
-  downloadingId: string | null
-  onPreview: (file: SharedFile['file']) => void
-  onDownload: (fileId: string, filename: string) => void
+  files: SharedFile[];
+  downloadingId: string | null;
+  onPreview: (file: SharedFile["file"]) => void;
+  onDownload: (fileId: string, filename: string) => void;
 }
 
-export default function SharedFilesTable({ files, downloadingId, onPreview, onDownload }: Props) {
+export default function SharedFilesTable({
+  files,
+  downloadingId,
+  onPreview,
+  onDownload,
+}: Props) {
   return (
     <div className="border border-gray-800 rounded-xl overflow-hidden">
       <table className="w-full text-sm">
@@ -43,11 +45,13 @@ export default function SharedFilesTable({ files, downloadingId, onPreview, onDo
                 {sanitizeText(sf.sharedBy)}
               </td>
               <td className="px-4 py-3">
-                <span className={`text-xs px-2 py-0.5 rounded-full border capitalize ${
-                  sf.permission === 'download'
-                    ? 'bg-blue-950/40 text-blue-400 border-blue-900'
-                    : 'bg-gray-800 text-gray-400 border-gray-700'
-                }`}>
+                <span
+                  className={`text-xs px-2 py-0.5 rounded-full border capitalize ${
+                    sf.permission === "download"
+                      ? "bg-blue-950/40 text-blue-400 border-blue-900"
+                      : "bg-gray-800 text-gray-400 border-gray-700"
+                  }`}
+                >
                   {sf.permission}
                 </span>
               </td>
@@ -61,9 +65,11 @@ export default function SharedFilesTable({ files, downloadingId, onPreview, onDo
                     label="Preview"
                     icon={<Eye className="w-4 h-4" />}
                   />
-                  {sf.permission === 'download' && (
+                  {sf.permission === "download" && (
                     <ActionButton
-                      onClick={() => onDownload(sf.file.id, sf.file.originalName)}
+                      onClick={() =>
+                        onDownload(sf.file.id, sf.file.originalName)
+                      }
                       loading={downloadingId === sf.file.id}
                       label="Download"
                       icon={<Download className="w-4 h-4" />}
@@ -76,5 +82,5 @@ export default function SharedFilesTable({ files, downloadingId, onPreview, onDo
         </tbody>
       </table>
     </div>
-  )
+  );
 }

@@ -1,26 +1,26 @@
-/**
- * UserSearchInput — debounced email autocomplete for the share flow.
- * Queries GET /api/users/search?email=<query> with a 300 ms debounce.
- */
+/* 
+UserSearchInput: autocomplete when searching for other users mail
+Queries GET /api/users/search?email=<query> 
+*/
 
-import { useRef } from 'react'
-import type { ChangeEvent } from 'react'
-import apiClient from '../api/client'
-import { sanitizeText } from '../utils/sanitize'
+import { useRef } from "react";
+import type { ChangeEvent } from "react";
+import apiClient from "../api/client";
+import { sanitizeText } from "../utils/sanitize";
 
 interface UserSuggestion {
-  id: string
-  email: string
+  id: string;
+  email: string;
 }
 
 interface Props {
-  value: string
-  suggestions: UserSuggestion[]
-  showSuggestions: boolean
-  onChange: (value: string) => void
-  onSuggestions: (suggestions: UserSuggestion[]) => void
-  onShowSuggestions: (show: boolean) => void
-  onSelect: (suggestion: UserSuggestion) => void
+  value: string;
+  suggestions: UserSuggestion[];
+  showSuggestions: boolean;
+  onChange: (value: string) => void;
+  onSuggestions: (suggestions: UserSuggestion[]) => void;
+  onShowSuggestions: (show: boolean) => void;
+  onSelect: (suggestion: UserSuggestion) => void;
 }
 
 export default function UserSearchInput({
@@ -32,32 +32,32 @@ export default function UserSearchInput({
   onShowSuggestions,
   onSelect,
 }: Props) {
-  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function handleChange(e: ChangeEvent<HTMLInputElement>) {
-    const val = e.target.value
-    onChange(val)
+    const val = e.target.value;
+    onChange(val);
 
-    if (searchTimer.current) clearTimeout(searchTimer.current)
+    if (searchTimer.current) clearTimeout(searchTimer.current);
 
     if (val.trim().length < 2) {
-      onSuggestions([])
-      onShowSuggestions(false)
-      return
+      onSuggestions([]);
+      onShowSuggestions(false);
+      return;
     }
 
     searchTimer.current = setTimeout(async () => {
       try {
         const { data } = await apiClient.get<UserSuggestion[]>(
-          `/users/search?email=${encodeURIComponent(val.trim())}`
-        )
-        onSuggestions(data)
-        onShowSuggestions(data.length > 0)
+          `/users/search?email=${encodeURIComponent(val.trim())}`,
+        );
+        onSuggestions(data);
+        onShowSuggestions(data.length > 0);
       } catch {
-        onSuggestions([])
-        onShowSuggestions(false)
+        onSuggestions([]);
+        onShowSuggestions(false);
       }
-    }, 300)
+    }, 300);
   }
 
   return (
@@ -70,7 +70,9 @@ export default function UserSearchInput({
         value={value}
         onChange={handleChange}
         onBlur={() => setTimeout(() => onShowSuggestions(false), 150)}
-        onFocus={() => { if (suggestions.length > 0) onShowSuggestions(true) }}
+        onFocus={() => {
+          if (suggestions.length > 0) onShowSuggestions(true);
+        }}
         placeholder="colleague@example.com"
         className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
       />
@@ -90,5 +92,5 @@ export default function UserSearchInput({
         </ul>
       )}
     </div>
-  )
+  );
 }

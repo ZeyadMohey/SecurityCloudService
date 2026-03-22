@@ -1,23 +1,21 @@
-/**
- * FileTable — "My Files" tab table with preview / download / share / delete actions.
- */
+/*My Files tab: table with preview / download / share / delete actions.*/
 
-import { Download, Eye, FileText, Loader2, Share2, Trash2 } from 'lucide-react'
-import { sanitizeText } from '../utils/sanitize'
-import { ActionButton, XssBadge, formatDate, formatSize } from './DashboardUI'
-import type { FileRecord } from '../types'
+import { Download, Eye, FileText, Loader2, Share2, Trash2 } from "lucide-react";
+import { sanitizeText } from "../utils/sanitize";
+import { ActionButton, XssBadge, formatDate, formatSize } from "./DashboardUI";
+import type { FileRecord } from "../types";
 
 interface Props {
-  files: FileRecord[]
-  deleteConfirm: string | null
-  deleting: string | null
-  downloadingId: string | null
-  onPreview: (file: FileRecord) => void
-  onDownload: (fileId: string, filename: string) => void
-  onShare: (file: FileRecord) => void
-  onDeleteConfirm: (fileId: string) => void
-  onDelete: (fileId: string) => void
-  onDeleteCancel: () => void
+  files: FileRecord[];
+  deleteConfirm: string | null;
+  deleting: string | null;
+  downloadingId: string | null;
+  onPreview: (file: FileRecord) => void;
+  onDownload: (fileId: string, filename: string) => void;
+  onShare: (file: FileRecord) => void;
+  onDeleteConfirm: (fileId: string) => void;
+  onDelete: (fileId: string) => void;
+  onDeleteCancel: () => void;
 }
 
 export default function FileTable({
@@ -55,8 +53,12 @@ export default function FileTable({
                   </span>
                 </div>
               </td>
-              <td className="px-4 py-3 text-gray-400">{formatSize(file.size)}</td>
-              <td className="px-4 py-3 text-gray-400">{formatDate(file.createdAt)}</td>
+              <td className="px-4 py-3 text-gray-400">
+                {formatSize(file.size)}
+              </td>
+              <td className="px-4 py-3 text-gray-400">
+                {formatDate(file.createdAt)}
+              </td>
               <td className="px-4 py-3">
                 <XssBadge status={file.xssScanStatus} />
               </td>
@@ -87,7 +89,9 @@ export default function FileTable({
                       >
                         {deleting === file.id ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : 'Confirm'}
+                        ) : (
+                          "Confirm"
+                        )}
                       </button>
                       <button
                         onClick={onDeleteCancel}
@@ -111,5 +115,5 @@ export default function FileTable({
         </tbody>
       </table>
     </div>
-  )
+  );
 }
