@@ -1,14 +1,9 @@
 /**
- * auth.test.ts — API-level integration tests for /api/auth routes.
+ * Tests Authentication
  *
  * Requires DATABASE_URL to point to a running PostgreSQL instance.
  * Run inside Docker:  docker compose exec backend npm test
  *
- * Tests:
- *  - Registration creates ECDH key pair
- *  - Login returns valid JWT
- *  - Invalid password rejected (401)
- *  - Duplicate email rejected (409)
  */
 import request from 'supertest'
 import jwt from 'jsonwebtoken'
@@ -36,15 +31,15 @@ describe('POST /api/auth/register', () => {
     expect(res.body).toHaveProperty('token')
     expect(res.body.user).toMatchObject({ email: email.toLowerCase() })
 
-    // ECDH key pair — Paper [9]: secp256k1 uncompressed public key = 65 bytes = 130 hex chars
+    // ECDH key pair
     expect(typeof res.body.user.ecdhPublicKey).toBe('string')
     expect(res.body.user.ecdhPublicKey.length).toBe(130)
 
-    // ecdhSalt returned so client can derive master key without re-sending password
+    // ecdhSalt 
     expect(typeof res.body.user.ecdhSalt).toBe('string')
     expect(res.body.user.ecdhSalt.length).toBe(64) // 32 bytes hex
 
-    // JWT must be verifiable
+    // JWT verifiable
     const jwtSecret = process.env['JWT_SECRET'] ?? ''
     const payload = jwt.verify(res.body.token as string, jwtSecret) as { userId: string; email: string }
     expect(payload.email).toBe(email.toLowerCase())
@@ -100,7 +95,7 @@ describe('POST /api/auth/login', () => {
     const payload = jwt.verify(res.body.token as string, jwtSecret) as { userId: string; email: string }
     expect(payload.email).toBe(loginEmail.toLowerCase())
 
-    // Login response includes ecdhSalt for master key derivation
+    // Login response includes ecdhSalt for master key 
     expect(typeof res.body.user.ecdhSalt).toBe('string')
   })
 
@@ -119,7 +114,7 @@ describe('POST /api/auth/login', () => {
       .send({ email: uniqueEmail(), password: VALID_PASSWORD })
 
     expect(res.status).toBe(401)
-    // Same message as wrong password — timing-safe comparison prevents enumeration
+    // Same message as wrong password timing-safe comparison prevents enumeration
     expect(res.body.message).toBe('Invalid credentials')
   })
 })

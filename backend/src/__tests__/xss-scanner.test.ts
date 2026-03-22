@@ -87,9 +87,9 @@ describe("scanText()", () => {
   });
 });
 
-// xssScanMiddleware — known XSS payloads blocked
+// xssScanMiddleware known XSS payloads blocked
 
-describe("xssScanMiddleware — XSS payloads blocked (Papers [3], [4])", () => {
+describe("xssScanMiddleware XSS payloads blocked", () => {
   const XSS_PAYLOADS = [
     "<script>alert(1)</script>",
     "<img src=x onerror=alert(1)>",
@@ -120,7 +120,7 @@ describe("xssScanMiddleware — XSS payloads blocked (Papers [3], [4])", () => {
 
 // xssScanMiddleware, benign filenames pass
 
-describe("xssScanMiddleware — benign filenames pass", () => {
+describe("xssScanMiddleware benign filenames pass", () => {
   const BENIGN_NAMES = [
     "vacation_photo.jpg",
     "report-2024.pdf",

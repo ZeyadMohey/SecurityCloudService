@@ -1,27 +1,21 @@
 /**
- * encryption.test.ts — Unit tests for crypto services.
- * No HTTP, no database — pure Node.js crypto tests.
+ * Tests Encryption Functions
+ * No HTTP, no database
  *
- * Papers covered:
- *  [6]  AES-256-GCM encryption (not ECB)
- *  [7]  GCM auth-tag tamper detection (MEGA vulnerability fix)
- *  [8]  SHA-256 integrity hash verification
- *  [9]  ECDH key exchange for file sharing
- *  [10] Per-file encryption keys
  */
 import { randomBytes, createECDH } from 'crypto'
 import { encryptFile, decryptFile, IntegrityError } from '../services/fileEncryption'
 import { encryptFileKeyForSharing, decryptSharedFileKey } from '../services/keySharing'
 import { encryptToHexObject, decryptFromHexObject, generateIV } from '../utils/crypto'
 
-// Stable test fixtures — re-generated once per suite for performance
+// CONSTANTS
 const PASSWORD = 'TestPass1'
 const SALT_HEX = randomBytes(32).toString('hex')
 const PLAINTEXT = Buffer.from('Hello, SecureVault! This is a test file.')
 
-// ── encrypt / decrypt roundtrip ────────────────────────────────────────────
+// encrypt / decrypt roundtrip
 
-describe('encryptFile / decryptFile roundtrip (Papers [6], [8], [10])', () => {
+describe('encryptFile / decryptFile roundtrip ', () => {
   it('decrypts back to the original plaintext', () => {
     const result = encryptFile(PLAINTEXT, PASSWORD, SALT_HEX)
     const recovered = decryptFile(
@@ -50,9 +44,9 @@ describe('encryptFile / decryptFile roundtrip (Papers [6], [8], [10])', () => {
   })
 })
 
-// ── integrity hash verification ─────────────────────────────────────────────
+// integrity hash verification
 
-describe('integrity hash verification (Paper [8])', () => {
+describe('integrity hash verification', () => {
   it('passes for an unmodified ciphertext', () => {
     const result = encryptFile(PLAINTEXT, PASSWORD, SALT_HEX)
     expect(() =>
@@ -83,14 +77,14 @@ describe('integrity hash verification (Paper [8])', () => {
   })
 })
 
-// ── per-file keys — Paper [10] ───────────────────────────────────────────────
+// per-file keys
 
-describe('per-file encryption keys (Paper [10])', () => {
+describe('per-file encryption keys', () => {
   it('two files encrypted with different random keys', () => {
     const r1 = encryptFile(PLAINTEXT, PASSWORD, SALT_HEX)
     const r2 = encryptFile(PLAINTEXT, PASSWORD, SALT_HEX)
 
-    // encryptedFileKey is the WRAPPED key (AES-GCM ciphertext of the file key).
+    // encryptedFileKey is the WRAPPED key
     // Because each file key and wrapping IV are random, the wrapped keys differ.
     expect(r1.encryptedFileKey).not.toBe(r2.encryptedFileKey)
     expect(r1.fileIv).not.toBe(r2.fileIv)
@@ -109,9 +103,9 @@ describe('per-file encryption keys (Paper [10])', () => {
   })
 })
 
-// ── AES-GCM auth-tag tamper detection — Paper [7] (MEGA vulnerability fix) ──
+// AES-GCM auth-tag tamper
 
-describe('AES-GCM rejects wrong auth tag (Paper [7])', () => {
+describe('AES-GCM rejects wrong auth tag', () => {
   it('throws when auth tag is corrupted (simulating ciphertext tampering)', () => {
     const key = randomBytes(32)
     const iv  = generateIV()
@@ -140,9 +134,9 @@ describe('AES-GCM rejects wrong auth tag (Paper [7])', () => {
   })
 })
 
-// ── ECDH key exchange for sharing — Paper [9] ────────────────────────────────
+// ECDH key exchange for sharing
 
-describe('ECDH file-key sharing (Paper [9])', () => {
+describe('ECDH file-key sharing', () => {
   const genKeyPair = () => {
     const ecdh = createECDH('secp256k1')
     ecdh.generateKeys()
@@ -180,7 +174,7 @@ describe('ECDH file-key sharing (Paper [9])', () => {
 
     const bundle = encryptFileKeyForSharing(fileKey, alice.privateKey, bob.publicKey)
 
-    // Mallory uses her own private key — ECDH produces a different shared secret
+    // Mallory uses her own private key
     expect(() => decryptSharedFileKey(bundle, mallory.privateKey, alice.publicKey)).toThrow()
   })
 })

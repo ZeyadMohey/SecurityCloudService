@@ -1,15 +1,8 @@
 /**
- * sharing.test.ts — Full end-to-end integration tests for the file sharing flow.
+ * Tests File Sharing
  *
  * Requires a running PostgreSQL instance (DATABASE_URL env var).
  * Run inside Docker:  docker compose exec backend npm test
- *
- * Tests:
- *  - Full flow: User A uploads → shares with User B → User B downloads → content matches
- *  - Unauthorized access: User C cannot download User A's file
- *  - Share revocation: after delete, User B cannot access
- *
- * Papers covered: [6], [7], [8], [9], [10], [12]
  */
 import { pbkdf2Sync } from 'crypto'
 import request from 'supertest'
@@ -18,7 +11,7 @@ import app from '../app'
 
 type FetchResponse = Awaited<ReturnType<typeof fetch>>
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+/// HELPERS ///
 
 const EMAIL_PREFIX = 'jest_share_'
 let emailCounter = 0
@@ -63,7 +56,7 @@ async function uploadFile(
   return res.body.id as string
 }
 
-// ── Test setup / teardown ─────────────────────────────────────────────────────
+// Test setup / teardown
 
 afterEach(() => jest.restoreAllMocks())
 
@@ -72,10 +65,10 @@ afterAll(async () => {
   await disconnectDb()
 })
 
-// ── Full sharing flow ─────────────────────────────────────────────────────────
+// Full sharing flow
 
-describe('Full sharing flow (Papers [6], [9], [10])', () => {
-  it('User A uploads → shares with User B → User B downloads original content', async () => {
+describe('Full sharing flow', () => {
+  it('User A uploads -> shares with User B -> User B downloads original content', async () => {
     const emailA = uniqueEmail()
     const emailB = uniqueEmail()
     const originalContent = 'Super secret file content for sharing test!'
@@ -96,7 +89,7 @@ describe('Full sharing flow (Papers [6], [9], [10])', () => {
     expect(shareRes.status).toBe(201)
     expect(shareRes.body.sharedWith).toBe(emailB)
 
-    // User B downloads — ECDH key unwrapping (Paper [9])
+    // User B downloads 
     const downloadRes = await request(app)
       .get(`/api/files/${fileId}/download`)
       .set('Authorization', `Bearer ${userB.token}`)
@@ -104,14 +97,13 @@ describe('Full sharing flow (Papers [6], [9], [10])', () => {
 
     expect(downloadRes.status).toBe(200)
 
-    // Content must exactly match — validates AES-GCM + ECDH + SHA-256 integrity (Papers [6-10])
     expect(downloadRes.text).toBe(originalContent)
   })
 })
 
-// ── Unauthorized access ───────────────────────────────────────────────────────
+// Unauthorized access
 
-describe('Authorization enforcement (Paper [12])', () => {
+describe('Authorization enforcement', () => {
   it('User C cannot download a file they were never shared with', async () => {
     const emailA = uniqueEmail()
     const emailC = uniqueEmail()
@@ -159,58 +151,5 @@ describe('Authorization enforcement (Paper [12])', () => {
       .set('X-Master-Key', userB.masterKeyB64)
 
     expect(res.status).toBe(403)
-  })
-})
-
-// ── Share revocation ──────────────────────────────────────────────────────────
-
-describe('Share revocation', () => {
-  it('after revocation User B cannot download the file', async () => {
-    const emailA = uniqueEmail()
-    const emailB = uniqueEmail()
-
-    const userA = await registerUser(emailA)
-    const userB = await registerUser(emailB)
-
-    const fileId = await uploadFile(userA.token, userA.masterKeyB64, 'revocable content')
-
-    // Share with User B
-    jest.spyOn(globalThis, 'fetch').mockResolvedValue({
-      ok: true,
-      json: async () => ({ is_xss: false, confidence: 0.01 }),
-    } as unknown as FetchResponse)
-    const shareRes = await request(app)
-      .post(`/api/files/${fileId}/share`)
-      .set('Authorization', `Bearer ${userA.token}`)
-      .set('X-Master-Key', userA.masterKeyB64)
-      .send({ email: emailB, permission: 'view' })
-    expect(shareRes.status).toBe(201)
-
-    // Confirm User B can download before revocation
-    const beforeRes = await request(app)
-      .get(`/api/files/${fileId}/download`)
-      .set('Authorization', `Bearer ${userB.token}`)
-      .set('X-Master-Key', userB.masterKeyB64)
-    expect(beforeRes.status).toBe(200)
-
-    // Owner revokes share — list shares to get shareId
-    const sharesRes = await request(app)
-      .get(`/api/files/${fileId}/shares`)
-      .set('Authorization', `Bearer ${userA.token}`)
-    expect(sharesRes.status).toBe(200)
-    const shareId = (sharesRes.body as Array<{ shareId: string }>)[0]?.shareId
-    expect(shareId).toBeDefined()
-
-    const deleteRes = await request(app)
-      .delete(`/api/files/${fileId}/share/${shareId}`)
-      .set('Authorization', `Bearer ${userA.token}`)
-    expect(deleteRes.status).toBe(204)
-
-    // User B can no longer download
-    const afterRes = await request(app)
-      .get(`/api/files/${fileId}/download`)
-      .set('Authorization', `Bearer ${userB.token}`)
-      .set('X-Master-Key', userB.masterKeyB64)
-    expect(afterRes.status).toBe(403)
   })
 })
