@@ -1,9 +1,3 @@
-/**
- * Express application factory — imported by tests and by index.ts (server entry).
- * Keeping this separate from server startup allows supertest to import the app
- * without binding a port.
- */
-
 import express from 'express'
 import type { Request, Response, NextFunction } from 'express'
 import helmet from 'helmet'
@@ -22,12 +16,12 @@ const healthPrisma = new PrismaClient()
 
 const app = express()
 
-// Security headers — helmet sets X-Frame-Options, X-Content-Type-Options,
-// Strict-Transport-Security, X-Download-Options, etc.
+// Trust the first proxy (Nginx) so express-rate-limit gets the correct client IP
+app.set('trust proxy', 1)
+
 // CSP is managed by our per-request nonce middleware instead of helmet's static CSP.
 app.use(helmet({ contentSecurityPolicy: false }))
 
-// CORS — restrict to known frontend origin to block cross-origin requests
 app.use(
   cors({
     origin:
@@ -38,15 +32,15 @@ app.use(
   })
 )
 
-// Per-request CSP nonce — Paper [5] (Knittel et al.)
 app.use(cspNonce)
 
-// Body parsing — 10 MB limit
+// Body parsing 10 MB limit
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 
-// Rate limiters — skipped in test mode to avoid inter-test interference
+// Rate limiters skipped in test mode to avoid inter-test interference
 const isTest = config.nodeEnv === 'test'
+
 
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -72,7 +66,7 @@ app.use('/api/files', filesRouter)
 app.use('/api/files', shareRouter)
 app.use('/api/users', usersRouter)
 
-// Health check — reports DB + ML service connectivity (Papers [13], [15])
+// Health check: reports DB + ML service connectivity
 app.get('/health', (_req: Request, res: Response) => {
   void (async () => {
     // DB check
@@ -83,7 +77,7 @@ app.get('/health', (_req: Request, res: Response) => {
       dbStatus = 'error'
     }
 
-    // ML service check with 3 s timeout
+    // ML service check with 3s timeout
     let mlStatus: 'ok' | 'degraded' = 'ok'
     const controller = new AbortController()
     const mlTimer = setTimeout(() => controller.abort(), 3_000)
@@ -114,7 +108,7 @@ app.use((_req: Request, res: Response) => {
   res.status(404).json({ message: 'Not found' })
 })
 
-// Global error handler — never leaks internal details
+// Global error handler
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   const message = err instanceof Error ? err.message : String(err)
   console.error('[Unhandled error]', message)

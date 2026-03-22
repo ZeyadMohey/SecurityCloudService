@@ -1,6 +1,3 @@
-// AuthenticatedRequest is superseded by types/express.d.ts which extends the
-// global Express.Request interface directly — no casting or wrapper needed.
-
 export interface JwtPayload {
   userId: string
   email: string
@@ -24,4 +21,21 @@ export interface EcdhPrivateKeyEnc {
   iv: string
   authTag: string
   salt: string
+}
+
+export interface SharedKeyBundle {
+  encryptedFileKey: string  // hex
+  iv: string                // hex, 12 bytes
+  authTag: string           // hex, 16 bytes
+  hkdfSalt: string          // hex, 32 bytes
+}
+
+export interface EncryptFileResult {
+  encryptedFile: Buffer
+  encryptedFileKey: string  // hex ciphertext of the wrapped file key
+  fileKeyIv: string
+  fileKeyAuthTag: string
+  fileIv: string
+  fileAuthTag: string
+  integrityHash: string     // SHA-256 of plaintext
 }

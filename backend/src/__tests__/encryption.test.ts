@@ -12,7 +12,7 @@
 import { randomBytes, createECDH } from 'crypto'
 import { encryptFile, decryptFile, IntegrityError } from '../services/fileEncryption'
 import { encryptFileKeyForSharing, decryptSharedFileKey } from '../services/keySharing'
-import { aesEncrypt, aesDecrypt, generateIV } from '../utils/crypto'
+import { encryptToHexObject, decryptFromHexObject, generateIV } from '../utils/crypto'
 
 // Stable test fixtures — re-generated once per suite for performance
 const PASSWORD = 'TestPass1'
@@ -116,27 +116,27 @@ describe('AES-GCM rejects wrong auth tag (Paper [7])', () => {
     const key = randomBytes(32)
     const iv  = generateIV()
     const plaintext = Buffer.from('sensitive data')
-    const encrypted = aesEncrypt(plaintext, key, iv)
+    const encrypted = encryptToHexObject(plaintext, key, iv)
 
     // Corrupt a single byte of the auth tag
     const badTag = Buffer.from(encrypted.authTag, 'hex')
     badTag[0] ^= 0xff
     const tampered = { ...encrypted, authTag: badTag.toString('hex') }
 
-    expect(() => aesDecrypt(tampered, key)).toThrow()
+    expect(() => decryptFromHexObject(tampered, key)).toThrow()
   })
 
   it('throws when ciphertext is modified (1 byte flip, tag no longer valid)', () => {
     const key = randomBytes(32)
     const iv  = generateIV()
-    const encrypted = aesEncrypt(Buffer.from('original content'), key, iv)
+    const encrypted = encryptToHexObject(Buffer.from('original content'), key, iv)
 
     // Flip bit in ciphertext — GCM auth tag will no longer verify
     const badCt = Buffer.from(encrypted.ciphertext, 'hex')
     badCt[0] ^= 0x01
     const tampered = { ...encrypted, ciphertext: badCt.toString('hex') }
 
-    expect(() => aesDecrypt(tampered, key)).toThrow()
+    expect(() => decryptFromHexObject(tampered, key)).toThrow()
   })
 })
 
