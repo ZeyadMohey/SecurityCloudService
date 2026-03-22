@@ -44,9 +44,9 @@ __pycache__/
 .Python
 venv/
 .venv/
-ml-service/models/*.h5
-ml-service/models/*.keras
-ml-service/models/*.pkl
+# ml-service/models/*.h5
+# ml-service/models/*.keras
+# ml-service/models/*.pkl
 PROJECT_EXPLANATION.md
 SPRINT_PROMPTS.md
 CODE_EXPLANATION.md
