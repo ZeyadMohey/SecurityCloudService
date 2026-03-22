@@ -20,7 +20,7 @@ export async function cleanupTestUsers(emailPrefix: string): Promise<void> {
     where: { email: { startsWith: emailPrefix } },
     select: { id: true },
   })
-  const ids = users.map((u) => u.id)
+  const ids = users.map((u: { id: string }) => u.id)
   if (ids.length === 0) return
 
   await prisma.sharedFile.deleteMany({
