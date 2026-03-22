@@ -1,13 +1,13 @@
-/**
- * DashboardNavbar — top navigation bar for the Dashboard page.
- */
+/*
+ DashboardNavbar, top navigation bar for the Dashboard page.
+*/
 
-import { Shield, LogOut } from 'lucide-react'
-import { sanitizeText } from '../utils/sanitize'
+import { Shield, LogOut } from "lucide-react";
+import { sanitizeText } from "../utils/sanitize";
 
 interface Props {
-  email: string
-  onLogout: () => void
+  email: string;
+  onLogout: () => void;
 }
 
 export default function DashboardNavbar({ email, onLogout }: Props) {
@@ -30,5 +30,5 @@ export default function DashboardNavbar({ email, onLogout }: Props) {
         </div>
       </div>
     </header>
-  )
+  );
 }

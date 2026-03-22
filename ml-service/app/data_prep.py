@@ -1,35 +1,24 @@
 """
-Data preparation for XSS detection — character-level tokenization.
-
-Implements the approach from Paper [4] (Li et al.): maps each character to an
-integer index, pads or truncates sequences to a fixed max_length, and builds
-a character vocabulary from the training corpus.
+Data preparation for XSS detection with character-level tokenization.
+maps each character to an integer index, pads or truncates sequences to a fixed max_length, 
+and builds a character vocabulary from the training corpus(Li et al.).
 """
 
 from __future__ import annotations
-
 import json
 import os
 from pathlib import Path
 from typing import Tuple
-
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-# ---------------------------------------------------------------------------
 # Constants
-# ---------------------------------------------------------------------------
-
-MAX_LENGTH = 200          # Fixed sequence length (Paper [4] recommendation)
+MAX_LENGTH = 200    
 VOCAB_PATH = Path(__file__).resolve().parent.parent / "models" / "char_vocab.json"
 DATASET_PATH = Path(__file__).resolve().parent.parent / "data" / "xss_dataset.csv"
 
-
-# ---------------------------------------------------------------------------
 # Vocabulary helpers
-# ---------------------------------------------------------------------------
-
 def build_vocab(texts: pd.Series) -> dict[str, int]:
     """Build a character → integer mapping from the training corpus.
 
@@ -56,14 +45,9 @@ def load_vocab(path: Path | None = None) -> dict[str, int]:
     with open(path, "r", encoding="utf-8") as fh:
         return json.load(fh)
 
-
-# ---------------------------------------------------------------------------
 # Tokenisation
-# ---------------------------------------------------------------------------
-
 def tokenize(text: str, vocab: dict[str, int], max_len: int = MAX_LENGTH) -> np.ndarray:
-    """Character-level tokenization per Paper [4].
-
+    """Character-level tokenization
     Each character is mapped to its vocabulary index.  Unknown characters
     map to <UNK> (index 1).  Sequences shorter than *max_len* are zero-padded
     on the right; longer sequences are truncated.
@@ -79,18 +63,14 @@ def tokenize_batch(texts: pd.Series, vocab: dict[str, int], max_len: int = MAX_L
     """Tokenize an entire Series of texts into a 2-D array."""
     return np.stack([tokenize(t, vocab, max_len) for t in texts])
 
-
-# ---------------------------------------------------------------------------
 # Dataset loading
-# ---------------------------------------------------------------------------
-
 def load_dataset(
     path: Path | None = None,
     test_size: float = 0.2,
     random_state: int = 42,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict[str, int]]:
-    """Load the CSV dataset, build vocab, tokenize, and split.
-
+    """
+    Load the CSV dataset, build vocab, tokenize, and split.
     Returns (X_train, X_test, y_train, y_test, vocab).
     """
     path = path or DATASET_PATH
@@ -120,11 +100,9 @@ def load_dataset(
     X_text = df["text"]
     y = df["label"].values
 
-    # Build vocab from full corpus (safe — character vocab, no label leakage)
+    # Build vocab from full corpus (safe character vocab, no label leakage)
     vocab = build_vocab(X_text)
-
     X = tokenize_batch(X_text, vocab)
-
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, random_state=random_state, stratify=y,
     )
