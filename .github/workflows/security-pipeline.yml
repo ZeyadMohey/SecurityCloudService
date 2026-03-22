@@ -1,0 +1,308 @@
+# security-pipeline.yml — SecureVault CI/CD Security Pipeline
+#
+# Paper [14] (Prates & Pereira): DevSecOps practices across pipeline stages.
+# Sequential security gates: each job must pass before the next runs.
+# Paper [13] (Ugale & Potgantwar): Trivy image scanning with CVE thresholds.
+# Paper [15] (Sinan et al.): automated security feedback at every stage.
+#
+# Gate order:
+#   1. secrets-scan    — catch leaked credentials before anything else
+#   2. lint-and-sast   — static analysis + dependency audit
+#   3. build-and-scan  — build images + Trivy CVE scan
+#   4. test            — integration tests against running stack
+
+name: Security Pipeline
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+
+  # ── Gate 1: Secrets Scan ──────────────────────────────────────────────────
+  # Paper [14]: secrets scanning is the first gate — block leaks before they
+  # reach any build or test environment.
+  secrets-scan:
+    name: Secrets Scan (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0    # full history needed for Gitleaks commit scanning
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GITLEAKS_LICENSE is required for organisations; omit for public repos
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  # ── Gate 2: Lint and SAST ────────────────────────────────────────────────
+  # Paper [14]: SAST and dependency auditing run on every push.
+  lint-and-sast:
+    name: Lint & SAST
+    runs-on: ubuntu-latest
+    needs: secrets-scan
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/package.json
+            frontend/package.json
+
+      # Backend
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm install
+
+      - name: Lint backend (ESLint)
+        working-directory: backend
+        run: npm run lint
+
+      - name: Audit backend dependencies
+        working-directory: backend
+        run: npm audit --audit-level=high
+        continue-on-error: false
+
+      # Frontend
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Lint frontend (ESLint)
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Audit frontend dependencies
+        working-directory: frontend
+        run: npm audit --audit-level=high
+        continue-on-error: false
+
+      # TypeScript strict compile check
+      - name: TypeScript check (backend)
+        working-directory: backend
+        run: npx tsc --noEmit
+
+  # ── Gate 2b: Backend Unit + Integration Tests ────────────────────────────
+  # Runs in parallel with build-and-scan. Uses a native PostgreSQL service so
+  # the full auth/sharing/encryption test suite can run without Docker.
+  backend-tests:
+    name: Backend Tests (Jest)
+    runs-on: ubuntu-latest
+    needs: lint-and-sast
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: securevault
+          POSTGRES_PASSWORD: securevault
+          POSTGRES_DB: securevault
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm install
+
+      - name: Run Prisma migrations
+        working-directory: backend
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://securevault:securevault@localhost:5432/securevault
+
+      - name: Run Jest test suite
+        working-directory: backend
+        run: npm test
+        env:
+          DATABASE_URL: postgresql://securevault:securevault@localhost:5432/securevault
+          JWT_SECRET: test_jwt_secret_minimum_32_characters_long_for_ci
+          MASTER_ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+          ML_SERVICE_URL: http://localhost:8000   # mocked in tests via jest.spyOn
+          NODE_ENV: test
+
+  # ── Gate 3: Build and Scan ───────────────────────────────────────────────
+  # Paper [13] (Ugale & Potgantwar): Trivy vulnerability scanner on all images.
+  # HIGH and CRITICAL CVEs block the pipeline — no vulnerable images reach prod.
+  build-and-scan:
+    name: Build Images & Trivy Scan
+    runs-on: ubuntu-latest
+    needs: lint-and-sast
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: false
+          tags: securevault-backend:ci
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: false
+          tags: securevault-frontend:ci
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build ML service image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./ml-service
+          push: false
+          tags: securevault-ml:ci
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Install Trivy
+        run: |
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | \
+            sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update && sudo apt-get install -y trivy
+
+      # Paper [13]: scan each image; exit-code 1 fails the job on HIGH/CRITICAL
+      - name: Trivy scan — backend
+        run: |
+          trivy image \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            --format table \
+            securevault-backend:ci
+
+      - name: Trivy scan — frontend
+        run: |
+          trivy image \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            --format table \
+            securevault-frontend:ci
+
+      - name: Trivy scan — ML service
+        run: |
+          trivy image \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            --format table \
+            securevault-ml:ci
+
+      # Generate JSON reports as artifacts for audit trail
+      - name: Trivy JSON reports
+        if: always()
+        run: |
+          trivy image --format json -o trivy-backend.json  securevault-backend:ci  || true
+          trivy image --format json -o trivy-frontend.json securevault-frontend:ci || true
+          trivy image --format json -o trivy-ml.json       securevault-ml:ci       || true
+
+      - name: Upload Trivy reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-reports
+          path: trivy-*.json
+          retention-days: 30
+
+  # ── Gate 4: Integration Tests ─────────────────────────────────────────────
+  # Paper [15]: automated testing at every stage for continuous feedback.
+  test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [build-and-scan, backend-tests]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Start stack
+        run: docker compose up -d --build
+        timeout-minutes: 10
+
+      - name: Wait for services to be healthy
+        run: |
+          timeout 120 bash -c '
+            until docker compose ps | grep -E "(healthy|running)" | wc -l | grep -q "4"; do
+              echo "Waiting for all services..."
+              docker compose ps
+              sleep 5
+            done
+          '
+
+      - name: Backend health check
+        run: curl -sf http://localhost:3001/health
+
+      - name: Frontend health check
+        run: curl -sf http://localhost:80/
+
+      - name: ML service health check (via backend network)
+        run: |
+          docker exec securevault-backend \
+            wget -qO- http://ml-service:8000/health
+
+      - name: CSP nonce rotation test
+        run: |
+          NONCE1=$(curl -sI http://localhost:3001/api/files \
+            -H "Authorization: Bearer dummy" | grep -i content-security-policy | grep -o "nonce-[^']*")
+          NONCE2=$(curl -sI http://localhost:3001/api/files \
+            -H "Authorization: Bearer dummy" | grep -i content-security-policy | grep -o "nonce-[^']*")
+          [ "$NONCE1" != "$NONCE2" ] && echo "PASS: CSP nonces rotate" || \
+            (echo "FAIL: CSP nonces are identical" && exit 1)
+
+      - name: Network isolation — frontend cannot reach DB
+        run: |
+          docker exec securevault-frontend \
+            sh -c "wget -qO- --timeout=3 http://db:5432/ 2>&1 || true" | \
+            grep -qE "bad address|Connection refused|failed" && \
+            echo "PASS: frontend cannot reach DB" || \
+            (echo "FAIL: frontend reached DB" && exit 1)
+
+      - name: Collect logs on failure
+        if: failure()
+        run: docker compose logs --tail=50
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/api/client.ts","./src/components/filepreview.tsx","./src/components/sharemodal.tsx","./src/components/index.ts","./src/hooks/useauth.ts","./src/pages/dashboard.tsx","./src/pages/login.tsx","./src/pages/register.tsx","./src/pages/index.ts","./src/types/index.ts","./src/utils/crypto.ts","./src/utils/sanitize.ts"],"version":"5.9.3"}

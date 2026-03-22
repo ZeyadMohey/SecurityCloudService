@@ -1,0 +1,71 @@
+# .gitleaks.toml — Gitleaks configuration for SecureVault
+#
+# Paper [14] (Prates & Pereira): secrets scanning is a key DevSecOps practice.
+# Gitleaks scans every commit for accidentally committed credentials.
+#
+# Rules detect: JWT secrets, private keys, AWS keys, database URLs with passwords,
+#               hex-encoded keys matching our key length patterns.
+# Allowlist:    test fixtures, example configs, this config file itself.
+
+title = "SecureVault Gitleaks Config"
+
+[extend]
+# Inherit Gitleaks' built-in ruleset (AWS keys, GitHub tokens, RSA keys, etc.)
+useDefault = true
+
+# ── Custom rules for SecureVault-specific secrets ─────────────────────────
+
+[[rules]]
+id          = "securevault-master-key"
+description = "SecureVault MASTER_ENCRYPTION_KEY (64-char hex)"
+regex       = '''MASTER_ENCRYPTION_KEY\s*[=:]\s*[0-9a-fA-F]{64}'''
+tags        = ["key", "securevault"]
+
+[[rules]]
+id          = "securevault-jwt-secret"
+description = "SecureVault JWT_SECRET in env or config"
+regex       = '''JWT_SECRET\s*[=:]\s*["']?[A-Za-z0-9+/=_\-]{32,}["']?'''
+tags        = ["jwt", "securevault"]
+
+[[rules]]
+id          = "securevault-db-password"
+description = "PostgreSQL connection string with embedded password"
+regex       = '''postgresql://[^:]+:[^@]{8,}@'''
+tags        = ["database", "password"]
+
+[[rules]]
+id          = "hex-256bit-key"
+description = "Generic 256-bit (64-char) hex-encoded secret"
+regex       = '''(?i)(secret|key|password|token)\s*[=:]\s*["']?[0-9a-fA-F]{64}["']?'''
+tags        = ["key", "generic"]
+
+# ── Allowlist ──────────────────────────────────────────────────────────────
+
+[allowlist]
+description = "Known-safe test fixtures and example values"
+
+# Paths that are intentionally allowed to contain example/placeholder secrets
+paths = [
+  # This config file itself references regex patterns that look like secrets
+  '''.gitleaks.toml''',
+  # Documentation with example values
+  '''docs/SECURITY\.md''',
+  # Test fixtures with placeholder values
+  '''.*\.test\.(ts|js)''',
+  '''.*\.spec\.(ts|js)''',
+  # The secrets directory is gitignored — if somehow committed, detect it
+  # (do NOT add secrets/ here)
+]
+
+# Specific regex patterns known to be safe (e.g., all-zeros dev keys)
+regexes = [
+  # All-zeros dev master key explicitly flagged in CLAUDE.md as dev-only
+  '''0{64}''',
+  # Dev JWT secret — contains the word "dev" and "change_in_production"
+  '''dev_jwt_secret_change_in_production''',
+  # Prisma shadow DB URL placeholder
+  '''postgresql://user:pass@''',
+]
+
+# Specific commit hashes to skip (e.g., initial scaffolding with known test values)
+# commits = []

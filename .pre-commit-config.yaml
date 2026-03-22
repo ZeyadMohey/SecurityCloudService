@@ -1,0 +1,22 @@
+# .pre-commit-config.yaml — Local pre-commit security hooks
+#
+# Paper [14] (Prates & Pereira): pre-commit hooks are the first line of
+# defence — catching secrets before they ever leave the developer's machine.
+#
+# Installation:
+#   pip install pre-commit
+#   pre-commit install          # installs the git hook
+#   pre-commit run --all-files  # run manually on all files
+#
+# The hook runs automatically on `git commit`. It calls Gitleaks to scan
+# staged changes for credentials before the commit is recorded.
+
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.0
+    hooks:
+      - id: gitleaks
+        name: Detect secrets (Gitleaks)
+        description: Scan staged files for leaked credentials before committing
+        # Use our project-specific config
+        args: ['--config', '.gitleaks.toml']

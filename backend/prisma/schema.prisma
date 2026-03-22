@@ -1,0 +1,56 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String       @id @default(uuid())
+  email             String       @unique
+  passwordHash      String
+  ecdhPublicKey     String       // Hex-encoded ECDH public key (secp256k1)
+  ecdhPrivateKeyEnc String       // Encrypted with user's password-derived key
+  createdAt         DateTime     @default(now())
+  files             File[]
+  sharedWithMe      SharedFile[] @relation("SharedWith")
+  sharedByMe        SharedFile[] @relation("SharedBy")
+}
+
+model File {
+  id               String       @id @default(uuid())
+  originalName     String
+  storagePath      String       // Path in encrypted storage
+  mimeType         String
+  size             Int
+  encryptedFileKey String       // File's AES key, encrypted with owner's master key
+  iv               String       // AES-GCM initialization vector (hex)
+  authTag          String       // AES-GCM auth tag (hex)
+  integrityHash    String       // SHA-256 of original plaintext
+  xssScanStatus    String       @default("pending") // pending | clean | flagged
+  xssScanScore     Float?
+  ownerId          String
+  owner            User         @relation(fields: [ownerId], references: [id])
+  shares           SharedFile[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+}
+
+model SharedFile {
+  id               String   @id @default(uuid())
+  fileId           String
+  file             File     @relation(fields: [fileId], references: [id])
+  sharedById       String
+  sharedBy         User     @relation("SharedBy", fields: [sharedById], references: [id])
+  sharedWithId     String
+  sharedWith       User     @relation("SharedWith", fields: [sharedWithId], references: [id])
+  encryptedFileKey String   // File key re-encrypted with ECDH shared secret
+  iv               String
+  permission       String   @default("view") // view | download
+  createdAt        DateTime @default(now())
+
+  @@unique([fileId, sharedWithId])
+}
