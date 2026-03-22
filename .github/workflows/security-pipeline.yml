@@ -88,6 +88,11 @@ jobs:
         run: npm audit --audit-level=high
         continue-on-error: false
 
+      # Generate Prisma client so TypeScript has the model types available
+      - name: Generate Prisma client
+        working-directory: backend
+        run: npx prisma generate
+
       # TypeScript strict compile check
       - name: TypeScript check (backend)
         working-directory: backend
