@@ -1,9 +1,3 @@
-/**
- * Express application factory — imported by tests and by index.ts (server entry).
- * Keeping this separate from server startup allows supertest to import the app
- * without binding a port.
- */
-
 import express from 'express'
 import type { Request, Response, NextFunction } from 'express'
 import helmet from 'helmet'
@@ -22,12 +16,12 @@ const healthPrisma = new PrismaClient()
 
 const app = express()
 
-// Security headers — helmet sets X-Frame-Options, X-Content-Type-Options,
-// Strict-Transport-Security, X-Download-Options, etc.
+// Trust the first proxy (Nginx) so express-rate-limit gets the correct client IP
+app.set('trust proxy', 1)
+
 // CSP is managed by our per-request nonce middleware instead of helmet's static CSP.
 app.use(helmet({ contentSecurityPolicy: false }))
 
-// CORS — restrict to known frontend origin to block cross-origin requests
 app.use(
   cors({
     origin:
