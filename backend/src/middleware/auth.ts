@@ -7,9 +7,7 @@ import type { JwtPayload } from '../types'
  * JWT authentication middleware.
  *
  * Reads the Bearer token from the Authorization header, verifies it with
- * JWT_SECRET, and attaches userId + userEmail to req (via types/express.d.ts).
- * Returns 401 — never 403 — so callers learn nothing about whether the resource
- * exists (avoids information leakage per Paper [1]).
+ * JWT_SECRET, and attaches userId + userEmail to req 
  */
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers['authorization']
@@ -25,7 +23,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
     req.userEmail = payload.email
     next()
   } catch {
-    // jwt.verify throws on expired, invalid signature, malformed token — all 401
+    // jwt.verify throws on expired, invalid signature, malformed token
     res.status(401).json({ message: 'Unauthorized' })
   }
 }

@@ -1,34 +1,8 @@
-/**
- * Sharing routes — ECDH-based file key re-encryption (Paper [9])
- *
- * All routes are mounted under /api/files in index.ts, giving:
- *   POST   /api/files/:id/share
- *   GET    /api/files/shared-with-me
- *   DELETE /api/files/:id/share/:shareId
- *
- * ## Security design (Paper [9] — Abualkas & B.D., ECC-AES hybrid)
- *
- * Sharing a file never exposes the sender's master key or the recipient's
- * private key. Instead:
- *
- * 1. Sender decrypts their own ECDH private key (using their master key from
- *    the X-Master-Key header) and decrypts the per-file AES key.
- * 2. ECDH(sender_private, recipient_public) produces a shared secret that
- *    only those two parties can independently reproduce — the secret itself
- *    is never transmitted or stored.
- * 3. HKDF(SHA-256, shared_secret, random_salt) stretches the raw ECDH output
- *    into a proper 256-bit AES key.
- * 4. The file key is re-encrypted with that AES key and stored as a
- *    SharedKeyBundle JSON in SharedFile.encryptedFileKey.
- * 5. On download, the recipient performs the mirror operation using their
- *    own private key and the sender's public key (ECDH commutativity).
- */
-
 import { Router } from 'express'
 import type { Request, Response } from 'express'
 import { PrismaClient } from '@prisma/client'
 import { requireAuth } from '../middleware/auth'
-import { aesDecrypt } from '../utils/crypto'
+import { decryptFromHexObject } from '../utils/crypto'
 import { encryptFileKeyForSharing } from '../services/encryption'
 import { parseMasterKey, decryptUserPrivateKey } from '../utils/routeHelpers'
 import type { EncryptedData } from '../types'
@@ -36,9 +10,8 @@ import type { EncryptedData } from '../types'
 const router = Router()
 const prisma = new PrismaClient()
 
-// ---------------------------------------------------------------------------
-// POST /:id/share  →  POST /api/files/:id/share
-// ---------------------------------------------------------------------------
+
+/// SHARE FILE //
 
 router.post(
   '/:id/share',
@@ -108,9 +81,7 @@ router.post(
         return
       }
 
-      // Check for duplicate share — the DB has a @@unique([fileId, sharedWithId])
-      // constraint so this would fail at the DB level too, but we return a
-      // friendlier message here.
+      // Check for duplicate share
       const existing = await prisma.sharedFile.findUnique({
         where: {
           fileId_sharedWithId: { fileId, sharedWithId: recipient.id },
@@ -122,24 +93,20 @@ router.post(
         return
       }
 
-      // ── ECDH key re-encryption (Paper [9]) ─────────────────────────────────
+      // ECDH key re-encryption
 
       // Step 1: decrypt sender's ECDH private key using their master key
       const senderPrivKey = decryptUserPrivateKey(file.owner.ecdhPrivateKeyEnc, masterKey)
 
       // Step 2: decrypt the per-file AES key using sender's master key
-      // encryptedFileKey is JSON { ciphertext, iv, authTag } (all hex)
       const keyBundle = JSON.parse(file.encryptedFileKey) as EncryptedData
-      const fileKey = aesDecrypt(keyBundle, masterKey)
+      const fileKey = decryptFromHexObject(keyBundle, masterKey)
 
       // Step 3: re-encrypt file key for recipient via ECDH shared secret
-      // ECDH(A_private, B_public) → HKDF → AES-256-GCM wrap of file key
       const recipientPubKey = Buffer.from(recipient.ecdhPublicKey, 'hex')
       const sharedBundle = encryptFileKeyForSharing(fileKey, senderPrivKey, recipientPubKey)
 
       // Step 4: persist the SharedFile record
-      // SharedKeyBundle JSON goes in encryptedFileKey; iv also stored in its own
-      // column because the schema was designed that way.
       const sharedFile = await prisma.sharedFile.create({
         data: {
           fileId,
@@ -163,9 +130,7 @@ router.post(
   }
 )
 
-// ---------------------------------------------------------------------------
-// GET /shared-with-me  →  GET /api/files/shared-with-me
-// ---------------------------------------------------------------------------
+/// GET SHARED LIST ///
 
 router.get(
   '/shared-with-me',
@@ -214,10 +179,7 @@ router.get(
   }
 )
 
-// ---------------------------------------------------------------------------
-// GET /:id/shares  →  GET /api/files/:id/shares
-// Returns the list of users a file has been shared with (owner only).
-// ---------------------------------------------------------------------------
+/// RETURN FILE'S SHARED LIST (owner only) //
 
 router.get(
   '/:id/shares',
@@ -255,9 +217,7 @@ router.get(
   }
 )
 
-// ---------------------------------------------------------------------------
-// DELETE /:id/share/:shareId  →  DELETE /api/files/:id/share/:shareId
-// ---------------------------------------------------------------------------
+/// DELETE SHARED FILE /// 
 
 router.delete(
   '/:id/share/:shareId',
@@ -268,9 +228,9 @@ router.delete(
 
     try {
       // Find the SharedFile record, confirming:
-      //  • the shareId matches the :shareId param
-      //  • it belongs to the correct file (:id param)
-      //  • the current user owns that file
+      //  the shareId matches the :shareId param
+      //  it belongs to the correct file (:id param)
+      //  the current user owns that file
       const sharedRecord = await prisma.sharedFile.findFirst({
         where: {
           id: shareId,

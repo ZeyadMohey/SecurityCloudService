@@ -2,11 +2,7 @@ import { randomBytes } from 'crypto'
 import type { Request, Response, NextFunction } from 'express'
 
 /**
- * CSP Nonce Middleware — Paper 5 (Knittel et al.)
- *
- * Generates a cryptographically unique nonce per request.
- * NEVER reuses nonces across requests (addresses Paper 5's nonce reuse vulnerability).
- * Sets Cache-Control: no-store to prevent CDN/proxy caching of nonce-bearing responses.
+ * CSP Nonce Middlewar
  */
 export function cspNonce(_req: Request, res: Response, next: NextFunction): void {
   const nonce = randomBytes(16).toString('base64')
@@ -26,7 +22,7 @@ export function cspNonce(_req: Request, res: Response, next: NextFunction): void
     ].join('; ')
   )
 
-  // Prevent caching of responses with nonces — CDN caching a nonce is a security hole
+  // Prevent caching of responses with nonce
   res.setHeader('Cache-Control', 'no-store')
 
   next()
