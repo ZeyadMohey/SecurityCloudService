@@ -7,7 +7,7 @@
   Other: preview not available
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { X, Download, Loader2, AlertTriangle } from "lucide-react";
 import apiClient from "../api/client";
 import { sanitizeText } from "../utils/sanitize";
@@ -30,6 +30,7 @@ export default function FilePreview({ file, onClose, onDownload }: Props) {
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [srcdoc, setSrcdoc] = useState<string | null>(null);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const pdfBlobUrlRef = useRef<string | null>(null);
   const kind = getPreviewKind(file.mimeType);
 
   // Fetch and prepare preview content
@@ -57,7 +58,9 @@ export default function FilePreview({ file, onClose, onDownload }: Props) {
         const rawText = await blob.text();
         setSrcdoc(buildTextSrcdoc(rawText));
       } else if (kind === "pdf") {
-        setPdfBlobUrl(URL.createObjectURL(blob));
+        const url = URL.createObjectURL(blob);
+        pdfBlobUrlRef.current = url;
+        setPdfBlobUrl(url);
       }
       setLoadState("ready");
     } catch {
@@ -68,7 +71,7 @@ export default function FilePreview({ file, onClose, onDownload }: Props) {
   useEffect(() => {
     void buildPreview();
     return () => {
-      if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
+      if (pdfBlobUrlRef.current) URL.revokeObjectURL(pdfBlobUrlRef.current);
     };
   }, [buildPreview]);
 
