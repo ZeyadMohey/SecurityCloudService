@@ -1,6 +1,7 @@
 fastapi==0.135.1
 uvicorn[standard]==0.35.0
-tensorflow==2.16.2
+tensorflow==2.18.0
+protobuf>=5.29.6
 numpy==1.26.4
 pandas==2.2.3
 scikit-learn==1.6.0
