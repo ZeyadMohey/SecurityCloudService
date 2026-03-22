@@ -1,27 +1,23 @@
-/**
- * File management routes — upload, list, download, delete.
- *
- * Security: X-Master-Key header (base64, 32-byte PBKDF2 key); per-file
- * AES-256-GCM keys (Paper [10]); SHA-256 integrity check on download (Paper [8]);
- * ECDH shared-secret key unwrapping for shared files (Paper [9]).
- */
-
 import { Router } from 'express'
 import type { Request, Response } from 'express'
 import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
-import { randomBytes, createHash, timingSafeEqual } from 'crypto'
 import { v4 as uuidv4 } from 'uuid'
 import { PrismaClient } from '@prisma/client'
 import { requireAuth } from '../middleware/auth'
 import { config } from '../config/env'
-import { aesDecrypt } from '../utils/crypto'
+import {
+  decryptFromHexObject,
+  generateFileKey,
+  sha256,
+  encryptBuffer,
+  decryptBuffer,
+  timingSafeEqualBuffers,
+} from '../utils/crypto'
 import { decryptSharedFileKey } from '../services/encryption'
 import {
   parseMasterKey,
-  gcmEncryptBuffer,
-  gcmDecryptBuffer,
   decryptUserPrivateKey,
 } from '../utils/routeHelpers'
 import { triggerXssScan } from '../services/xssScan'
@@ -32,7 +28,8 @@ import type { EncryptedData } from '../types'
 const router = Router()
 const prisma = new PrismaClient()
 
-// ── Multer — temp storage ────────────────────────────────────────────────────
+
+/// MULTER TEMP STORAGE ///
 
 const tmpDir = path.join(config.uploadDir, 'tmp')
 fs.mkdirSync(tmpDir, { recursive: true })
@@ -46,7 +43,8 @@ const upload = multer({
   limits: { fileSize: 50 * 1024 * 1024 },
 })
 
-// ── POST /api/files/upload ───────────────────────────────────────────────────
+
+/// UPLOAD ///
 
 router.post(
   '/upload',
@@ -67,27 +65,23 @@ router.post(
     }
 
     try {
-      // Paper [1]: sanitize filename before storage
       const safeOriginalName = sanitizeFilename(req.file.originalname)
 
       const plaintext = fs.readFileSync(tempPath)
-      const integrityHash = createHash('sha256').update(plaintext).digest('hex')
-      const fileKey = randomBytes(32)
-      const fileEnc = gcmEncryptBuffer(plaintext, fileKey)
-      const keyEnc  = gcmEncryptBuffer(fileKey, masterKey)
+      const integrityHash = sha256(plaintext)
+      const fileKey = generateFileKey()
+      const fileEnc = encryptBuffer(plaintext, fileKey)
+      const keyEnc  = encryptBuffer(fileKey, masterKey)
 
       const fileId = uuidv4()
       fs.writeFileSync(path.join(config.uploadDir, `${fileId}.enc`), fileEnc.ciphertext)
 
       const encryptedFileKey = JSON.stringify({
         ciphertext: keyEnc.ciphertext.toString('hex'),
-        iv: keyEnc.iv,
-        authTag: keyEnc.authTag,
+        iv: keyEnc.iv.toString('hex'),
+        authTag: keyEnc.authTag.toString('hex'),
       } satisfies EncryptedData)
 
-      // Derive scan status from synchronous middleware result
-      // req.xssScanResult === null  → ML unavailable (will async-scan below)
-      // req.xssScanResult === ScanResult → ML returned clean (XSS already rejected)
       const scanResult = req.xssScanResult
       const xssScanStatus = scanResult != null ? 'clean' : 'pending'
       const xssScanScore  = scanResult != null ? scanResult.confidence : null
@@ -100,8 +94,8 @@ router.post(
           mimeType: req.file.mimetype,
           size: req.file.size,
           encryptedFileKey,
-          iv: fileEnc.iv,
-          authTag: fileEnc.authTag,
+          iv: fileEnc.iv.toString('hex'),
+          authTag: fileEnc.authTag.toString('hex'),
           integrityHash,
           ownerId: req.userId,
           xssScanStatus,
@@ -132,7 +126,8 @@ router.post(
   }
 )
 
-// ── GET /api/files ───────────────────────────────────────────────────────────
+
+/// LIST ///
 
 router.get('/', requireAuth, async (req: Request, res: Response): Promise<void> => {
   try {
@@ -161,7 +156,8 @@ router.get('/', requireAuth, async (req: Request, res: Response): Promise<void> 
   }
 })
 
-// ── GET /api/files/:id/download ──────────────────────────────────────────────
+
+/// DOWNLOAD ///
 
 router.get('/:id/download', requireAuth, async (req: Request, res: Response): Promise<void> => {
   const masterKey = parseMasterKey(req)
@@ -179,7 +175,7 @@ router.get('/:id/download', requireAuth, async (req: Request, res: Response): Pr
     let fileKey: Buffer
 
     if (file.ownerId === req.userId) {
-      fileKey = aesDecrypt(JSON.parse(file.encryptedFileKey) as EncryptedData, masterKey)
+      fileKey = decryptFromHexObject(JSON.parse(file.encryptedFileKey) as EncryptedData, masterKey)
     } else {
       const sharedRecord = await prisma.sharedFile.findUnique({
         where: { fileId_sharedWithId: { fileId, sharedWithId: req.userId } },
@@ -194,7 +190,7 @@ router.get('/:id/download', requireAuth, async (req: Request, res: Response): Pr
 
       const recipientPrivKey = decryptUserPrivateKey(recipient.ecdhPrivateKeyEnc, masterKey)
       const senderPubKey     = Buffer.from(sharedRecord.sharedBy.ecdhPublicKey, 'hex')
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       fileKey = decryptSharedFileKey(JSON.parse(sharedRecord.encryptedFileKey), recipientPrivKey, senderPubKey)
     }
 
@@ -205,12 +201,17 @@ router.get('/:id/download', requireAuth, async (req: Request, res: Response): Pr
       return
     }
 
-    const plaintext  = gcmDecryptBuffer(fs.readFileSync(encFilePath), fileKey, file.iv, file.authTag)
-    const actualHash = createHash('sha256').update(plaintext).digest('hex')
+    const plaintext = decryptBuffer(
+      fs.readFileSync(encFilePath),
+      fileKey,
+      Buffer.from(file.iv, 'hex'),
+      Buffer.from(file.authTag, 'hex')
+    )
+    const actualHash = sha256(plaintext)
 
     if (
       actualHash.length !== file.integrityHash.length ||
-      !timingSafeEqual(Buffer.from(actualHash, 'hex'), Buffer.from(file.integrityHash, 'hex'))
+      !timingSafeEqualBuffers(Buffer.from(actualHash, 'hex'), Buffer.from(file.integrityHash, 'hex'))
     ) {
       console.error(`[integrity] file=${fileId} hash mismatch`)
       res.status(500).json({ message: 'File integrity check failed' })
@@ -228,7 +229,8 @@ router.get('/:id/download', requireAuth, async (req: Request, res: Response): Pr
   }
 })
 
-// ── DELETE /api/files/:id ────────────────────────────────────────────────────
+
+/// DELETE ///
 
 router.delete('/:id', requireAuth, async (req: Request, res: Response): Promise<void> => {
   const fileId = req.params['id']
