@@ -8,6 +8,9 @@ RUN apt-get update && \
     apt-get upgrade -y --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
+# Non-root user — Paper [11] (container escape prevention)
+RUN groupadd -r app && useradd -r -g app app
+
 WORKDIR /app
 
 # Upgrade pip/setuptools to pull in patched bundled deps (wheel, jaraco.context).
@@ -54,7 +57,7 @@ COPY --chown=app:app app/ ./app/
 
 # Model weights from training stage   baked into the image so no volume needed
 RUN mkdir -p models
-COPY --from=train --chown=app:app /app/models/ ./models/
+COPY --chown=app:app models/ ./models/
 
 USER app
 
@@ -64,3 +67,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
