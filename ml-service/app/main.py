@@ -12,7 +12,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, field_validator
 from .model import detector
 
-# Rule-based pre-filter — catches common XSS patterns regardless of length.
+# Rule-based pre-filter   catches common XSS patterns regardless of length.
 # This is a defense-in-depth layer to lower ML usage
 _XSS_RULE = re.compile(
     r"<\s*script"               # <script ...>
@@ -43,7 +43,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="SecureVault XSS Scanner",
-    description="CNN-LSTM XSS detection microservice — Papers [3] & [4]",
+    description="CNN-LSTM XSS detection microservice   Papers [3] & [4]",
     version="1.0.0",
     lifespan=lifespan,
 )

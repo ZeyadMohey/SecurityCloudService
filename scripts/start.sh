@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# start.sh — One-command local deployment for SecureVault.
+# start.sh   One-command local deployment for SecureVault.
 #
 # Usage:
 #   bash scripts/start.sh          # build + start (foreground)
@@ -10,7 +10,7 @@
 #   2. Starts the full stack with docker compose up --build.
 #
 # ML model training is performed automatically inside the ml-service Docker
-# build (see ml-service/Dockerfile train stage) — no separate step required.
+# build (see ml-service/Dockerfile train stage)   no separate step required.
 #
 # Prerequisites: Docker Desktop (or Docker Engine + Compose plugin) running.
 
@@ -26,7 +26,7 @@ if [ ! -d "secrets" ] || [ ! -f "secrets/db_password.txt" ]; then
   echo "[start] Generating Docker secrets..."
   bash scripts/init-secrets.sh
 else
-  echo "[start] Secrets already exist — skipping generation."
+  echo "[start] Secrets already exist   skipping generation."
 fi
 
 # ── Step 2: Build and start ───────────────────────────────────────────────────

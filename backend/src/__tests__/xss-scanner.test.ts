@@ -1,5 +1,5 @@
 /*
-xss-scanner.test.ts — Unit tests for the XSS scan service and middleware.
+xss-scanner.test.ts   Unit tests for the XSS scan service and middleware.
 */
 import express from "express";
 import multer from "multer";
@@ -37,7 +37,7 @@ afterEach(() => jest.restoreAllMocks());
 
 const middlewareApp = express();
 middlewareApp.use(express.json());
-// Memory storage — no disk I/O needed for middleware tests
+// Memory storage   no disk I/O needed for middleware tests
 middlewareApp.use(multer({ storage: multer.memoryStorage() }).single("file"));
 middlewareApp.post("/scan-test", xssScanMiddleware, (req, res) => {
   res.json({ blocked: false, scanResult: req.xssScanResult });
@@ -145,7 +145,7 @@ describe("xssScanMiddleware benign filenames pass", () => {
 
 // xssScanMiddleware, ML unavailable allows upload
 
-describe("xssScanMiddleware — graceful degrade when ML unavailable", () => {
+describe("xssScanMiddleware   graceful degrade when ML unavailable", () => {
   it("passes request through and sets xssScanResult=null when ML is down", async () => {
     mockFetchUnavailable();
     const res = await request(middlewareApp)
@@ -163,7 +163,7 @@ describe("xssScanMiddleware — graceful degrade when ML unavailable", () => {
 
 // xssScanMiddleware, confidence threshold boundary
 
-describe("xssScanMiddleware — confidence threshold (0.7)", () => {
+describe("xssScanMiddleware   confidence threshold (0.7)", () => {
   it("allows content with XSS confidence exactly at threshold (0.7 is NOT > 0.7)", async () => {
     jest.spyOn(globalThis, "fetch").mockResolvedValueOnce({
       ok: true,

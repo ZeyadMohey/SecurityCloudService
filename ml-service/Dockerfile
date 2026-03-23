@@ -1,20 +1,16 @@
 # ── Stage 1: Train ───────────────────────────────────────────────────────────
-# Paper [11]: multi-stage build — training data and heavy ML tooling are
-# excluded from the production image. Only model weights are carried forward.
+# Multi-stage build: training data and heavy ML tooling excluded from prod image.
+# Only model weights are carried forward.
 FROM python:3.11-slim AS train
 
-# Paper [13] (Ugale & Potgantwar): apply all available OS patches at build time
-# to remediate Debian base-image CVEs before Trivy scanning in CI.
+# Patch OS packages.
 RUN apt-get update && \
     apt-get upgrade -y --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Upgrade pip and setuptools before installing requirements.
-# setuptools vendors wheel and jaraco.context internally — upgrading to 82+
-# pulls in wheel>=0.46.2 (fixes CVE-2026-24049) and drops jaraco.context<6
-# (fixes CVE-2026-23949). Paper [13]: keep all package versions CVE-free.
+# Upgrade pip/setuptools to pull in patched bundled deps (wheel, jaraco.context).
 RUN pip install --no-cache-dir --upgrade pip setuptools
 
 # Install all dependencies (including training deps)
@@ -28,41 +24,38 @@ COPY data/ ./data/
 # Ensure models directory exists for weight output
 RUN mkdir -p models
 
-# Train the model — weights saved to models/xss_cnn_lstm.weights.h5
+# Train the model   weights saved to models/xss_cnn_lstm.weights.h5
 # Falls back gracefully if training fails (e.g., insufficient data)
-RUN python -m app.train || echo "Training skipped — weights will be absent in runtime"
+RUN python -m app.train || echo "Training skipped   weights will be absent in runtime"
 
 # ── Stage 2: Runtime ─────────────────────────────────────────────────────────
-# Minimal python:3.11-slim — no training data, no raw dataset, no dev tooling.
-# Paper [11]: attack surface reduction via minimal image.
-# Paper [12]: only model inference code is present at runtime.
+# Minimal image   no training data, no raw dataset, no dev tooling.
 FROM python:3.11-slim AS runtime
 
-# Apply OS patches — same reason as train stage (Paper [13])
+# Patch OS packages.
 RUN apt-get update && \
     apt-get upgrade -y --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
-# Non-root user — Paper [11] (container escape prevention)
+# Run as non-root user.
 RUN groupadd -r app && useradd -r -g app app
 
 WORKDIR /app
 
-# Upgrade pip and setuptools — same reason as train stage (Paper [13])
+# Upgrade pip/setuptools.
 RUN pip install --no-cache-dir --upgrade pip setuptools
 
 # Install only production dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir --timeout=300 -r requirements.txt
 
-# Application code only — no training data
+# Application code only   no training data
 COPY --chown=app:app app/ ./app/
 
-# Model weights from training stage — baked into the image so no volume needed
+# Model weights from training stage   baked into the image so no volume needed
 RUN mkdir -p models
 COPY --from=train --chown=app:app /app/models/ ./models/
 
-# Paper [11]: drop to non-root
 USER app
 
 EXPOSE 8000

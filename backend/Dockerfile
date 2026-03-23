@@ -1,11 +1,8 @@
 # ── Stage 1: Build ──────────────────────────────────────────────────────────
-# Paper [11] (Jarkas et al.): multi-stage build — TypeScript compiler and all
-# dev dependencies never reach the production image.
+# Multi-stage build: TypeScript compiler and dev dependencies never reach prod.
 FROM node:20-alpine AS build
 
-# Paper [13] (Ugale & Potgantwar): apply all available OS patches at build time
-# to remediate base-image CVEs before Trivy scanning in CI.
-# Upgrade npm itself to pull in patched bundled deps (cross-spawn, glob, tar, minimatch).
+# Patch OS packages and upgrade npm to pull in updated bundled deps.
 RUN apk upgrade --no-cache && npm install -g npm@latest --quiet
 
 WORKDIR /app
@@ -21,20 +18,18 @@ RUN npm run prisma:generate
 RUN npm run build
 
 # ── Stage 2: Runtime ─────────────────────────────────────────────────────────
-# Minimal node:20-alpine image — only compiled JS + production node_modules.
-# Paper [11]: minimal base image reduces CVE exposure.
-# Paper [12]: no shell tools, no package manager access at runtime.
+# Minimal image   only compiled JS and production node_modules.
 FROM node:20-alpine AS runtime
 
-# Apply OS patches and upgrade npm bundled deps — Paper [13]
+# Patch OS packages and upgrade npm bundled deps.
 RUN apk upgrade --no-cache && npm install -g npm@latest --quiet
 
-# Non-root user — Paper [11] (container escape prevention via non-root execution)
+# Run as non-root user to limit container escape impact.
 RUN addgroup -S app && adduser -S app -G app
 
 WORKDIR /app
 
-# Install production dependencies only — no TypeScript, no build tools
+# Install production dependencies only   no TypeScript, no build tools
 COPY package.json ./
 RUN npm install --omit=dev && npm cache clean --force
 
@@ -56,7 +51,6 @@ RUN apk add --no-cache openssl && \
     mkdir -p /app/uploads/tmp && \
     chown -R app:app /app/uploads
 
-# Paper [11]: drop to non-root for all subsequent operations
 USER app
 
 EXPOSE 3001

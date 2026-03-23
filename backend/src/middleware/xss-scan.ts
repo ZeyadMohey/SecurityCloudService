@@ -48,7 +48,7 @@ export function xssScanMiddleware(
       const result = await scanText(text);
 
       if (result === null) {
-        // ML unavailable — mark as null so upload route falls back to async scan
+        // ML unavailable   mark as null so upload route falls back to async scan
         req.xssScanResult = null;
         return next();
       }

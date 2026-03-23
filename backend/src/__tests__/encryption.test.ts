@@ -125,7 +125,7 @@ describe('AES-GCM rejects wrong auth tag', () => {
     const iv  = generateIV()
     const encrypted = encryptToHexObject(Buffer.from('original content'), key, iv)
 
-    // Flip bit in ciphertext — GCM auth tag will no longer verify
+    // Flip bit in ciphertext   GCM auth tag will no longer verify
     const badCt = Buffer.from(encrypted.ciphertext, 'hex')
     badCt[0] ^= 0x01
     const tampered = { ...encrypted, ciphertext: badCt.toString('hex') }

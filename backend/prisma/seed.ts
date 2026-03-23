@@ -1,10 +1,10 @@
 /**
- * Database seed — creates two test users with full ECDH key pairs.
+ * Database seed   creates two test users with full ECDH key pairs.
  *
  * Implements ECC key pair generation from Paper [9] (Abualkas & B.D.):
  * - secp256k1 ECDH key pair generated at "registration" time
  * - Private key encrypted with AES-256-GCM using a PBKDF2-derived master key (Paper 7)
- * - ecdhPrivateKeyEnc stored as JSON: { iv, authTag, ciphertext, salt } — all hex strings
+ * - ecdhPrivateKeyEnc stored as JSON: { iv, authTag, ciphertext, salt }   all hex strings
  */
 
 import { PrismaClient } from '@prisma/client'
@@ -39,11 +39,11 @@ function deriveKeyFromPassword(password: string, salt: Buffer): Buffer {
 }
 
 function encryptPrivateKey(privateKeyHex: string, masterKey: Buffer): EncryptedPrivateKey {
-  const iv = randomBytes(12) // 96-bit IV for AES-256-GCM (Paper 7 — never reuse IVs)
+  const iv = randomBytes(12) // 96-bit IV for AES-256-GCM (Paper 7   never reuse IVs)
   const cipher = createCipheriv('aes-256-gcm', masterKey, iv)
   const privateKeyBuf = Buffer.from(privateKeyHex, 'hex')
   const ciphertext = Buffer.concat([cipher.update(privateKeyBuf), cipher.final()])
-  const authTag = cipher.getAuthTag() // GCM auth tag — detects tampering (Paper 7)
+  const authTag = cipher.getAuthTag() // GCM auth tag   detects tampering (Paper 7)
   return {
     ciphertext: ciphertext.toString('hex'),
     iv: iv.toString('hex'),
@@ -55,22 +55,22 @@ function encryptPrivateKey(privateKeyHex: string, masterKey: Buffer): EncryptedP
 async function createUser(email: string, password: string): Promise<void> {
   const existing = await prisma.user.findUnique({ where: { email } })
   if (existing) {
-    console.log(`  User ${email} already exists — skipping`)
+    console.log(`  User ${email} already exists   skipping`)
     return
   }
 
   // 1. Hash password with bcrypt (cost factor 12)
   const passwordHash = await bcrypt.hash(password, 12)
 
-  // 2. Generate ECDH key pair (secp256k1 — Paper 9)
+  // 2. Generate ECDH key pair (secp256k1   Paper 9)
   const { publicKey, privateKey } = generateECDHKeyPair()
 
-  // 3. Derive master key from password via PBKDF2 (Paper 6 — key derivation)
+  // 3. Derive master key from password via PBKDF2 (Paper 6   key derivation)
   //    PBKDF2(password, salt, 100_000 iterations, 32 bytes, SHA-512)
   const salt = randomBytes(32)
   const masterKey = deriveKeyFromPassword(password, salt)
 
-  // 4. Encrypt private key with AES-256-GCM (NOT ECB — Paper 7)
+  // 4. Encrypt private key with AES-256-GCM (NOT ECB   Paper 7)
   const encrypted = encryptPrivateKey(privateKey, masterKey)
   encrypted.salt = salt.toString('hex')
 
@@ -104,7 +104,7 @@ async function main(): Promise<void> {
   }
 
   console.log('\nSeed complete.')
-  console.log('Test credentials: alice@test.com / bob@test.com — Password123!')
+  console.log('Test credentials: alice@test.com / bob@test.com   Password123!')
 }
 
 main()

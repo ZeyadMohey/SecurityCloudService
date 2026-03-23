@@ -1,22 +1,14 @@
-# docker-compose.yml — SecureVault development stack
-#
-# Security architecture (Papers [11] & [12]):
-#   Paper [11] (Jarkas et al.): non-root users, no-new-privileges, read_only
-#     filesystems with tmpfs for ephemeral writes.
-#   Paper [12] (Lee et al.): custom network segments prevent lateral movement.
-#     Default Docker bridge allows all containers to communicate freely;
-#     explicit network membership enforces isolation.
+# docker-compose.yml   SecureVault development stack
 #
 # Network topology:
 #   frontend  → frontend-net + backend-net (can reach backend, not DB/ML)
 #   backend   → backend-net + db-net + ml-net (bridges all layers)
-#   db        → db-net only (internal — no external egress, no host port)
-#   ml-service→ ml-net only (internal — no external egress, no host port)
+#   db        → db-net only (no external egress, no host port)
+#   ml-service→ ml-net only (no external egress, no host port)
 #
-# DB migration access: docker exec securevault-backend npx prisma migrate dev
+# DB migration: docker exec securevault-backend npx prisma migrate dev
 
 services:
-
   # ── Database ───────────────────────────────────────────────────────────────
   db:
     image: postgres:16-alpine
@@ -26,10 +18,10 @@ services:
       POSTGRES_USER: securevault
       POSTGRES_PASSWORD: securevault_dev_password
       POSTGRES_DB: securevault
-    # Port 5432 bound to loopback only — lets host-side `npm test` (Jest
+    # Port 5432 bound to loopback only   lets host-side `npm test` (Jest
     # integration tests) reach the DB. Not reachable from external interfaces.
     ports:
-      - '127.0.0.1:5433:5432'
+      - "127.0.0.1:5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -37,7 +29,7 @@ services:
     security_opt:
       - no-new-privileges:true
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U securevault -d securevault']
+      test: ["CMD-SHELL", "pg_isready -U securevault -d securevault"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -60,9 +52,9 @@ services:
       MASTER_ENCRYPTION_KEY: 0000000000000000000000000000000000000000000000000000000000000000
       ML_SERVICE_URL: http://ml-service:8000
     ports:
-      - '3001:3001'
+      - "3001:3001"
     volumes:
-      # Named volume for encrypted file storage — survives container restarts
+      # Named volume for encrypted file storage   survives container restarts
       - uploads_data:/app/uploads
     networks:
       - backend-net
@@ -70,14 +62,13 @@ services:
       - ml-net
     security_opt:
       - no-new-privileges:true
-    # Paper [11]: read-only root filesystem — only /app/uploads (volume) is
-    # writable. /tmp provided via tmpfs for ephemeral process needs.
+    # Read-only root filesystem   only /app/uploads (volume) is writable.
     read_only: true
     tmpfs:
       - /tmp:mode=1777,size=64m
     # start_period covers Prisma migration time on first boot
     healthcheck:
-      test: ['CMD', 'wget', '-qO-', 'http://localhost:3001/health']
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
       interval: 30s
       timeout: 10s
       start_period: 60s
@@ -90,20 +81,25 @@ services:
       dockerfile: Dockerfile
     container_name: securevault-ml
     restart: unless-stopped
-    # Not exposed to host — only reachable from backend via ml-net (Paper [12])
+    # Not exposed to host   only reachable from backend via ml-net.
     expose:
-      - '8000'
+      - "8000"
     networks:
       - ml-net
     security_opt:
       - no-new-privileges:true
-    # Paper [11]: read-only root filesystem. Model weights are baked into the
-    # image at build time so no volume mount is needed.
+    # Read-only root filesystem. Model weights are baked into the image at build time.
     read_only: true
     tmpfs:
       - /tmp:mode=1777,size=32m
     healthcheck:
-      test: ['CMD', 'python', '-c', "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')",
+        ]
       interval: 30s
       timeout: 10s
       start_period: 30s
@@ -119,20 +115,20 @@ services:
     depends_on:
       - backend
     ports:
-      - '80:8080'
+      - "80:8080"
     networks:
       - frontend-net
       - backend-net
     security_opt:
       - no-new-privileges:true
-    # Paper [11]: read-only root filesystem. nginx temp dirs on tmpfs.
+    # Read-only root filesystem. nginx temp dirs on tmpfs.
     read_only: true
     tmpfs:
       - /tmp:mode=1777,size=32m
       - /var/cache/nginx:mode=755
       - /var/run:mode=755
     healthcheck:
-      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:8080/']
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/"]
       interval: 30s
       timeout: 5s
       start_period: 15s
@@ -146,7 +142,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-      target: build       # build stage has all deps including devDependencies
+      target: build # build stage has all deps including devDependencies
     command: sh -c "npx prisma migrate deploy && npm test"
     environment:
       NODE_ENV: test
@@ -162,12 +158,10 @@ services:
       db:
         condition: service_healthy
     profiles:
-      - test    # only started with: docker compose --profile test ...
+      - test # only started with: docker compose --profile test ...
 
 # ── Networks ──────────────────────────────────────────────────────────────
-# Paper [12]: custom bridge networks replace the default bridge, which allows
-# unrestricted container-to-container communication. Each segment limits the
-# blast radius of a compromised container.
+# Custom bridge networks: each segment limits the blast radius of a compromised container.
 networks:
   frontend-net:
     driver: bridge
@@ -175,11 +169,11 @@ networks:
     driver: bridge
   db-net:
     driver: bridge
-    # internal: true removed — port 127.0.0.1:5433 binding for local `npm test`
+    # internal: true removed   port 127.0.0.1:5433 binding for local `npm test`
     # Isolation enforced by network membership: only backend is on db-net.
   ml-net:
     driver: bridge
-    internal: true    # No external egress — ML service is not routable from outside Docker
+    internal: true # No external egress   ML service is not routable from outside Docker
 
 # ── Volumes ───────────────────────────────────────────────────────────────
 volumes:

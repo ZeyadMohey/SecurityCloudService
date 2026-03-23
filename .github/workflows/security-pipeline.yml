@@ -1,15 +1,12 @@
-# security-pipeline.yml — SecureVault CI/CD Security Pipeline
+# security-pipeline.yml   SecureVault CI/CD Security Pipeline
 #
-# Paper [14] (Prates & Pereira): DevSecOps practices across pipeline stages.
 # Sequential security gates: each job must pass before the next runs.
-# Paper [13] (Ugale & Potgantwar): Trivy image scanning with CVE thresholds.
-# Paper [15] (Sinan et al.): automated security feedback at every stage.
 #
 # Gate order:
-#   1. secrets-scan    — catch leaked credentials before anything else
-#   2. lint-and-sast   — static analysis + dependency audit
-#   3. build-and-scan  — build images + Trivy CVE scan
-#   4. test            — integration tests against running stack
+#   1. secrets-scan      catch leaked credentials before anything else
+#   2. lint-and-sast     static analysis + dependency audit
+#   3. build-and-scan    build images + Trivy CVE scan
+#   4. test              integration tests against running stack
 
 name: Security Pipeline
 
@@ -20,10 +17,7 @@ on:
     branches: [main, master]
 
 jobs:
-
   # ── Gate 1: Secrets Scan ──────────────────────────────────────────────────
-  # Paper [14]: secrets scanning is the first gate — block leaks before they
-  # reach any build or test environment.
   secrets-scan:
     name: Secrets Scan (Gitleaks)
     runs-on: ubuntu-latest
@@ -31,7 +25,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0    # full history needed for Gitleaks commit scanning
+          fetch-depth: 0 # full history needed for Gitleaks commit scanning
 
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
@@ -41,7 +35,6 @@ jobs:
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
   # ── Gate 2: Lint and SAST ────────────────────────────────────────────────
-  # Paper [14]: SAST and dependency auditing run on every push.
   lint-and-sast:
     name: Lint & SAST
     runs-on: ubuntu-latest
@@ -54,8 +47,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
           cache-dependency-path: |
             backend/package.json
             frontend/package.json
@@ -128,8 +121,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
           cache-dependency-path: backend/package.json
 
       - name: Install backend dependencies
@@ -153,12 +146,11 @@ jobs:
           DATABASE_URL: postgresql://securevault:securevault@localhost:5432/securevault
           JWT_SECRET: test_jwt_secret_minimum_32_characters_long_for_ci
           MASTER_ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
-          ML_SERVICE_URL: http://localhost:8000   # mocked in tests via jest.spyOn
+          ML_SERVICE_URL: http://localhost:8000 # mocked in tests via jest.spyOn
           NODE_ENV: test
 
   # ── Gate 3: Build and Scan ───────────────────────────────────────────────
-  # Paper [13] (Ugale & Potgantwar): Trivy vulnerability scanner on all images.
-  # HIGH and CRITICAL CVEs block the pipeline — no vulnerable images reach prod.
+  # HIGH and CRITICAL CVEs block the pipeline   no vulnerable images reach prod.
   build-and-scan:
     name: Build Images & Trivy Scan
     runs-on: ubuntu-latest
@@ -209,8 +201,7 @@ jobs:
             sudo tee -a /etc/apt/sources.list.d/trivy.list
           sudo apt-get update && sudo apt-get install -y trivy
 
-      # Paper [13]: scan each image; exit-code 1 fails the job on HIGH/CRITICAL
-      - name: Trivy scan — backend
+      - name: Trivy scan   backend
         run: |
           trivy image \
             --severity HIGH,CRITICAL \
@@ -218,7 +209,7 @@ jobs:
             --format table \
             securevault-backend:ci
 
-      - name: Trivy scan — frontend
+      - name: Trivy scan   frontend
         run: |
           trivy image \
             --severity HIGH,CRITICAL \
@@ -226,7 +217,7 @@ jobs:
             --format table \
             securevault-frontend:ci
 
-      - name: Trivy scan — ML service
+      - name: Trivy scan   ML service
         run: |
           trivy image \
             --severity HIGH,CRITICAL \
@@ -251,7 +242,6 @@ jobs:
           retention-days: 30
 
   # ── Gate 4: Integration Tests ─────────────────────────────────────────────
-  # Paper [15]: automated testing at every stage for continuous feedback.
   test:
     name: Integration Tests
     runs-on: ubuntu-latest
@@ -264,7 +254,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Start stack
         run: docker compose up -d --build
@@ -300,7 +290,7 @@ jobs:
           [ "$NONCE1" != "$NONCE2" ] && echo "PASS: CSP nonces rotate" || \
             (echo "FAIL: CSP nonces are identical" && exit 1)
 
-      - name: Network isolation — frontend cannot reach DB
+      - name: Network isolation   frontend cannot reach DB
         run: |
           docker exec securevault-frontend \
             sh -c "wget -qO- --timeout=3 http://db:5432/ 2>&1 || true" | \

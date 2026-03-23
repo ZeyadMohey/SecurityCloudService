@@ -107,7 +107,7 @@ class XSSDetector:
             return {
                 "is_xss": False,
                 "confidence": 0.0,
-                "details": "Model not loaded — falling back to safe default",
+                "details": "Model not loaded   falling back to safe default",
             }
 
         prob = self._score_windows(text)

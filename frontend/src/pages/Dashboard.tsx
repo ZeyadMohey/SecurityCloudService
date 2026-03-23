@@ -119,7 +119,7 @@ export default function Dashboard() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch {
-      // Silently handle — user remains on page
+      // Silently handle   user remains on page
     } finally {
       setDownloadingId(null);
     }
@@ -133,7 +133,7 @@ export default function Dashboard() {
       setOwnedFiles((prev) => prev.filter((f) => f.id !== fileId));
       setDeleteConfirm(null);
     } catch {
-      // Keep file in list — delete failed
+      // Keep file in list   delete failed
     } finally {
       setDeleting(null);
     }
@@ -215,7 +215,7 @@ export default function Dashboard() {
           (loading ? (
             <LoadingState />
           ) : ownedFiles.length === 0 ? (
-            <EmptyState message="No files yet — upload your first file above." />
+            <EmptyState message="No files yet   upload your first file above." />
           ) : (
             <FileTable
               files={ownedFiles}
@@ -280,7 +280,7 @@ export default function Dashboard() {
         />
       )}
 
-      {/* Security features badge — Paper [1–15] */}
+      {/* Security features badge   Paper [1–15] */}
       <footer className="border-t border-gray-800/60 mt-8 py-4 bg-gray-950">
         <div className="max-w-5xl mx-auto px-4">
           <p className="text-xs text-gray-600 text-center tracking-wide">

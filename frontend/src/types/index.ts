@@ -3,7 +3,7 @@ export interface User {
   email: string;
   ecdhPublicKey: string;
   /*
-   Hex-encoded PBKDF2 salt — returned on login/register so the client can
+   Hex-encoded PBKDF2 salt   returned on login/register so the client can
    derive the master key without sending the raw password again. 
   */
   ecdhSalt: string;

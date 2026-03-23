@@ -1,5 +1,5 @@
 /**
- * Jest global setup — runs in each worker before any test module is imported.
+ * Jest global setup   runs in each worker before any test module is imported.
  * Sets env vars consumed by config/secrets.ts at module-load time.
  */
 import os from 'os'
@@ -8,7 +8,7 @@ import fs from 'fs'
 
 process.env['NODE_ENV'] = 'test'
 
-// Secrets — used by config/secrets.ts when /run/secrets/* files are absent
+// Secrets   used by config/secrets.ts when /run/secrets/* files are absent
 process.env['JWT_SECRET'] ??= 'test_jwt_secret_minimum_32_characters_long_for_jest'
 process.env['MASTER_ENCRYPTION_KEY'] ??= '0'.repeat(64) // 32-byte all-zero key (dev only)
 

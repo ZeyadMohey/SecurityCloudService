@@ -1,4 +1,4 @@
-# SecureVault — Setup Guide
+# SecureVault Setup Guide
 
 Step-by-step instructions to get the full stack running from scratch on any machine.
 
@@ -8,18 +8,18 @@ Step-by-step instructions to get the full stack running from scratch on any mach
 
 Install the following before you begin:
 
-| Tool | Minimum version | Check |
-|------|----------------|-------|
-| [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Compose plugin) | Docker 24 · Compose v2 | `docker --version` |
-| [Git](https://git-scm.com/) | any recent | `git --version` |
-| [OpenSSL](https://www.openssl.org/) | any recent (used by `init-secrets.sh`) | `openssl version` |
+| Tool                                                                                                  | Minimum version                        | Check              |
+| ----------------------------------------------------------------------------------------------------- | -------------------------------------- | ------------------ |
+| [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Compose plugin) | Docker 24 · Compose v2                 | `docker --version` |
+| [Git](https://git-scm.com/)                                                                           | any recent                             | `git --version`    |
+| [OpenSSL](https://www.openssl.org/)                                                                   | any recent (used by `init-secrets.sh`) | `openssl version`  |
 
-> **Windows users:** run all shell commands in **Git Bash** (ships with Git for Windows) — `bash` scripts are not compatible with PowerShell or CMD.
+> **Windows users:** run all shell commands in **Git Bash** (ships with Git for Windows) `bash` scripts are not compatible with PowerShell or CMD.
 > **macOS/Linux:** any terminal works.
 
 ---
 
-## 1 — Clone the repository
+## 1 Clone the repository
 
 ```bash
 git clone <repo-url>
@@ -28,7 +28,7 @@ cd securevault
 
 ---
 
-## 2 — Generate Docker secrets
+## 2 Generate Docker secrets
 
 The backend needs three secret values at runtime (database password, JWT key, master encryption key). The helper script generates them with `openssl rand`:
 
@@ -45,21 +45,22 @@ secrets/
 └── master_key.txt       # AES-256 master encryption key (32-byte hex)
 ```
 
-> **Important:** `secrets/` is in `.gitignore` — these files are **never committed**. Back them up separately. Losing `master_key.txt` makes all encrypted files permanently unrecoverable.
+> **Important:** `secrets/` is in `.gitignore` these files are **never committed**. Back them up separately. Losing `master_key.txt` makes all encrypted files permanently unrecoverable.
 
 ---
 
-## 3 — Start the stack
+## 3 Start the stack
 
 ```bash
 bash scripts/start.sh
 ```
 
 This script:
+
 1. Checks whether secrets already exist (skips generation if they do)
 2. Runs `docker compose up --build`
 
-All four services build and start automatically. The ML model is trained during the Docker build — no separate step is needed.
+All four services build and start automatically. The ML model is trained during the Docker build no separate step is needed.
 
 To run in the background instead:
 
@@ -69,18 +70,18 @@ bash scripts/start.sh -d
 
 ### What gets built
 
-| Service | Image base | What happens |
-|---------|-----------|--------------|
-| `db` | `postgres:16-alpine` | Pulls image, no build |
-| `backend` | `node:20-alpine` | Compiles TypeScript, runs Prisma migrations on first boot |
-| `ml-service` | `python:3.11-slim` | Installs packages, **trains CNN-LSTM model** (~2–5 min on first build) |
-| `frontend` | `nginx:alpine` | Runs `vite build`, serves static files via nginx |
+| Service      | Image base           | What happens                                                           |
+| ------------ | -------------------- | ---------------------------------------------------------------------- |
+| `db`         | `postgres:16-alpine` | Pulls image, no build                                                  |
+| `backend`    | `node:20-alpine`     | Compiles TypeScript, runs Prisma migrations on first boot              |
+| `ml-service` | `python:3.11-slim`   | Installs packages, **trains CNN-LSTM model** (~2–5 min on first build) |
+| `frontend`   | `nginx:alpine`       | Runs `vite build`, serves static files via nginx                       |
 
 > **First build takes 5–10 minutes** due to the ML model training stage. Subsequent builds use the Docker layer cache and are much faster.
 
 ---
 
-## 4 — Verify all services are healthy
+## 4 Verify all services are healthy
 
 ```bash
 docker compose ps
@@ -118,13 +119,13 @@ Expected response:
 
 ---
 
-## 5 — Open the app
+## 5 Open the app
 
-| URL | Description |
-|-----|-------------|
-| http://localhost | Frontend (React SPA via nginx) |
-| http://localhost:3001 | Backend API (Express) |
-| http://localhost:3001/health | Health check (DB + ML status) |
+| URL                          | Description                    |
+| ---------------------------- | ------------------------------ |
+| http://localhost             | Frontend (React SPA via nginx) |
+| http://localhost:3001        | Backend API (Express)          |
+| http://localhost:3001/health | Health check (DB + ML status)  |
 
 Register an account, upload a file, share it with another user, and download it.
 
@@ -150,7 +151,7 @@ docker compose up --build -d
 
 ## Running the test suite
 
-### Unit tests (no database required — runs on the host)
+### Unit tests (no database required runs on the host)
 
 ```bash
 cd backend
@@ -182,7 +183,7 @@ docker compose --profile test run --rm backend-test
 
 ## Environment variables
 
-The Docker stack is fully self-contained — you do **not** need to create any `.env` files to run with Docker.
+The Docker stack is fully self-contained you do **not** need to create any `.env` files to run with Docker.
 
 `.env` files are only needed if you run services directly on the host (outside Docker):
 
@@ -210,6 +211,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
 The `docker-compose.prod.yml` overlay:
+
 - Mounts `secrets/*.txt` as Docker Secrets (`/run/secrets/*` inside containers)
 - Sets `NODE_ENV=production`
 - Replaces the hardcoded dev DB password with the secret file value
@@ -220,10 +222,10 @@ The `docker-compose.prod.yml` overlay:
 
 ### Port conflicts
 
-| Error | Fix |
-|-------|-----|
-| `bind: address already in use` on port 80 | Another web server is using port 80. Stop it or change the frontend port mapping in `docker-compose.yml` (`'8080:8080'` instead of `'80:8080'`). |
-| `bind: address already in use` on port 3001 | Something is already on 3001. Change backend mapping to `'3002:3001'` and update `frontend/.env` → `VITE_API_URL=http://localhost:3002`. |
+| Error                                       | Fix                                                                                                                                              |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `bind: address already in use` on port 80   | Another web server is using port 80. Stop it or change the frontend port mapping in `docker-compose.yml` (`'8080:8080'` instead of `'80:8080'`). |
+| `bind: address already in use` on port 3001 | Something is already on 3001. Change backend mapping to `'3002:3001'` and update `frontend/.env` → `VITE_API_URL=http://localhost:3002`.         |
 
 ### Backend fails to start ("Migration failed")
 
@@ -256,7 +258,7 @@ rm -rf secrets/                 # remove generated secrets
 bash scripts/start.sh           # full rebuild from scratch
 ```
 
-> **Warning:** `docker compose down -v` deletes the database volume — all uploaded files and user accounts are lost.
+> **Warning:** `docker compose down -v` deletes the database volume all uploaded files and user accounts are lost.
 
 ---
 

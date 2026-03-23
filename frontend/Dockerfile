@@ -1,10 +1,8 @@
 # ── Stage 1: Build ──────────────────────────────────────────────────────────
-# Paper [11] (Jarkas et al.): multi-stage build excludes dev tooling from the
-# production image, shrinking the attack surface.
+# Multi-stage build: dev tooling excluded from the production image.
 FROM node:20-alpine AS build
 
-# Paper [13] (Ugale & Potgantwar): apply OS patches before Trivy scanning in CI.
-# Upgrade npm itself to pull in patched bundled deps (cross-spawn, glob, tar, minimatch).
+# Patch OS packages and upgrade npm to pull in updated bundled deps.
 RUN apk upgrade --no-cache && npm install -g npm@latest --quiet
 
 WORKDIR /app
@@ -16,10 +14,10 @@ COPY . .
 RUN npm run build
 
 # ── Stage 2: Serve ──────────────────────────────────────────────────────────
-# Minimal nginx:alpine — no node, no npm, no build tools in production image.
+# Minimal nginx:alpine   no node, no npm, no build tools in production image.
 FROM nginx:alpine AS serve
 
-# Apply OS patches — Paper [13]: remediate base-image CVEs before scanning.
+# Patch OS packages.
 RUN apk upgrade --no-cache
 
 # Pre-create directories needed by nginx when running as non-root.
@@ -36,8 +34,7 @@ COPY nginx.conf /etc/nginx/nginx.conf
 # Copy the Vite production build
 COPY --from=build --chown=nginx:nginx /app/dist /usr/share/nginx/html
 
-# Paper [11]: drop to non-root. nginx workers inherit this user.
-# Master process runs on port 8080 so no CAP_NET_BIND_SERVICE is needed.
+# Run as non-root. Port 8080 requires no CAP_NET_BIND_SERVICE.
 USER nginx
 
 EXPOSE 8080

@@ -12,13 +12,13 @@ bash scripts/start.sh
 
 Open **http://localhost** in your browser.
 
-| Service   | URL                          |
-|-----------|------------------------------|
-| Frontend  | http://localhost             |
-| Backend   | http://localhost:3001        |
-| Health    | http://localhost:3001/health |
+| Service  | URL                          |
+| -------- | ---------------------------- |
+| Frontend | http://localhost             |
+| Backend  | http://localhost:3001        |
+| Health   | http://localhost:3001/health |
 
-> `scripts/start.sh` generates Docker Secrets on first run, then calls `docker compose up --build`. ML model training is baked into the image build — no separate step needed.
+> `scripts/start.sh` generates Docker Secrets on first run, then calls `docker compose up --build`. ML model training is baked into the image build no separate step needed.
 
 ---
 
@@ -58,31 +58,31 @@ Browser
 └────────────┘  └──────────────────────────┘
 
 Network segments (Paper [12]):
-  frontend-net  — browser → nginx only
-  backend-net   — nginx → Express only
-  db-net        — Express → PostgreSQL only  (internal: true)
-  ml-net        — Express → ML service only  (internal: true)
+  frontend-net    browser → nginx only
+  backend-net     nginx → Express only
+  db-net          Express → PostgreSQL only  (internal: true)
+  ml-net          Express → ML service only  (internal: true)
 ```
 
 ---
 
 ## Security Features
 
-| Feature | Implementation | Papers |
-|---------|---------------|--------|
-| **Input sanitisation** | DOMPurify (client) + allowlist regex (server) | [1] Hannousse, [2] Kaur |
-| **DL-based XSS detection** | CNN-LSTM on Kaggle XSS dataset, char-level tokens | [3] Tadhani, [4] Li |
-| **CSP nonce rotation** | `crypto.randomBytes(16)` per response, never cached | [5] Knittel |
-| **AES-256-GCM encryption** | File-at-rest with authenticated encryption (not ECB) | [6] Boneh, [7] Bhavani |
-| **MEGA vulnerability fix** | GCM auth-tag rejection on ciphertext tampering | [7] Bhavani |
-| **SHA-256 integrity** | `timingSafeEqual` hash comparison on every download | [8] Zhu |
-| **ECC key exchange** | ECDH(secp256k1) + HKDF for share key derivation | [9] Abualkas |
-| **Per-file encryption keys** | Each file gets a unique random 256-bit key | [10] EStore |
-| **Hardened containers** | Alpine base, non-root user, `read_only`, tmpfs | [11] Jarkas |
-| **Network isolation** | 4 custom bridge networks, db/ml marked `internal` | [12] Lee |
-| **CVE scanning** | Trivy `--severity HIGH,CRITICAL --exit-code 1` in CI | [13] Ugale |
-| **Secrets detection** | Gitleaks pre-commit hook + CI gate | [14] Prates |
-| **Docker Secrets** | `/run/secrets/` mount — no plaintext in env vars | [15] Sinan |
+| Feature                      | Implementation                                       | Papers                  |
+| ---------------------------- | ---------------------------------------------------- | ----------------------- |
+| **Input sanitisation**       | DOMPurify (client) + allowlist regex (server)        | [1] Hannousse, [2] Kaur |
+| **DL-based XSS detection**   | CNN-LSTM on Kaggle XSS dataset, char-level tokens    | [3] Tadhani, [4] Li     |
+| **CSP nonce rotation**       | `crypto.randomBytes(16)` per response, never cached  | [5] Knittel             |
+| **AES-256-GCM encryption**   | File-at-rest with authenticated encryption (not ECB) | [6] Boneh, [7] Bhavani  |
+| **MEGA vulnerability fix**   | GCM auth-tag rejection on ciphertext tampering       | [7] Bhavani             |
+| **SHA-256 integrity**        | `timingSafeEqual` hash comparison on every download  | [8] Zhu                 |
+| **ECC key exchange**         | ECDH(secp256k1) + HKDF for share key derivation      | [9] Abualkas            |
+| **Per-file encryption keys** | Each file gets a unique random 256-bit key           | [10] EStore             |
+| **Hardened containers**      | Alpine base, non-root user, `read_only`, tmpfs       | [11] Jarkas             |
+| **Network isolation**        | 4 custom bridge networks, db/ml marked `internal`    | [12] Lee                |
+| **CVE scanning**             | Trivy `--severity HIGH,CRITICAL --exit-code 1` in CI | [13] Ugale              |
+| **Secrets detection**        | Gitleaks pre-commit hook + CI gate                   | [14] Prates             |
+| **Docker Secrets**           | `/run/secrets/` mount no plaintext in env vars       | [15] Sinan              |
 
 ---
 
@@ -100,21 +100,21 @@ Download  →  AES-256-GCM decrypt → SHA-256 integrity verified → file retur
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 18, Vite, TypeScript, TailwindCSS, DOMPurify |
-| Backend | Node.js 20, Express, TypeScript, Prisma ORM |
-| Database | PostgreSQL 16 |
-| ML service | Python 3.11, FastAPI, TensorFlow 2, CNN-LSTM |
-| Containers | Docker, Docker Compose, Alpine Linux |
-| CI/CD | GitHub Actions (4 sequential security gates) |
+| Layer      | Technology                                         |
+| ---------- | -------------------------------------------------- |
+| Frontend   | React 18, Vite, TypeScript, TailwindCSS, DOMPurify |
+| Backend    | Node.js 20, Express, TypeScript, Prisma ORM        |
+| Database   | PostgreSQL 16                                      |
+| ML service | Python 3.11, FastAPI, TensorFlow 2, CNN-LSTM       |
+| Containers | Docker, Docker Compose, Alpine Linux               |
+| CI/CD      | GitHub Actions (4 sequential security gates)       |
 
 ---
 
 ## Running Tests
 
 ```bash
-# Unit tests (no database required) — runs on the host
+# Unit tests (no database required)   runs on the host
 cd backend && npm run test:unit
 
 # Full test suite (requires running stack)
@@ -137,18 +137,18 @@ Four sequential security gates (Papers [13], [14]):
 push / PR
   │
   ▼
-[Gate 1] Secrets Scan      — Gitleaks full-history scan
+[Gate 1] Secrets Scan        Gitleaks full-history scan
   │
   ▼
-[Gate 2] Lint & SAST       — ESLint + npm audit + tsc --noEmit
+[Gate 2] Lint & SAST         ESLint + npm audit + tsc --noEmit
   │
-  ├──▶ [Gate 2b] Backend Tests — Jest 39 tests (postgres service)
-  │
-  ▼
-[Gate 3] Build & Scan      — Docker Buildx + Trivy HIGH/CRITICAL
+  ├──▶ [Gate 2b] Backend Tests   Jest 39 tests (postgres service)
   │
   ▼
-[Gate 4] Integration Tests — docker compose up, health checks,
+[Gate 3] Build & Scan        Docker Buildx + Trivy HIGH/CRITICAL
+  │
+  ▼
+[Gate 4] Integration Tests   docker compose up, health checks,
                              network isolation verification
 ```
 
@@ -185,28 +185,34 @@ securevault/
 ## Setup Details
 
 ### Prerequisites
+
 - Docker Desktop 4.x (or Docker Engine + Compose plugin)
 - Ports 80 and 3001 free on the host
 
 ### First-time setup
+
 ```bash
 bash scripts/start.sh          # generates secrets + builds + starts
 ```
 
 ### Subsequent starts
+
 ```bash
 docker compose up              # use cached images
 docker compose up --build      # rebuild images
 ```
 
 ### Database migrations
+
 Migrations run automatically on backend startup via `docker-entrypoint.sh`.
 To run manually:
+
 ```bash
 docker compose exec backend npx prisma migrate dev
 ```
 
 ### Production deployment
+
 ```bash
 bash scripts/init-secrets.sh   # generates ./secrets/*.txt
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
@@ -216,10 +222,10 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 ## Team
 
-| Name | Role |
-|------|------|
-| [Member 1] | Backend & Encryption |
-| [Member 2] | Frontend & XSS Prevention |
+| Name       | Role                        |
+| ---------- | --------------------------- |
+| [Member 1] | Backend & Encryption        |
+| [Member 2] | Frontend & XSS Prevention   |
 | [Member 3] | ML Service & Model Training |
 | [Member 4] | DevOps & Container Security |
 

@@ -8,11 +8,11 @@ dist/
 build/
 *.js.map
 
-# Environment variables (real secrets — never commit these)
+# Environment variables (real secrets   never commit these)
 .env
 .env.local
 .env.*.local
-# .env.example files ARE committed — they contain only placeholder values
+# .env.example files ARE committed   they contain only placeholder values
 !.env.example
 
 # Uploaded files

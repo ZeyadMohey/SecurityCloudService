@@ -192,7 +192,7 @@ export default function FilePreview({ file, onClose, onDownload }: Props) {
         {/* Footer */}
         <div className="px-5 py-2.5 border-t border-gray-800 shrink-0">
           <p className="text-xs text-gray-600">
-            Preview is sandboxed — file content cannot access your session or
+            Preview is sandboxed file content cannot access your session or
             cookies.
           </p>
         </div>

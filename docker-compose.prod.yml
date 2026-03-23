@@ -1,16 +1,13 @@
-# docker-compose.prod.yml — Production overrides for SecureVault
+# docker-compose.prod.yml  Production overrides for SecureVault
 #
-# Paper [15] (Sinan et al.): Docker Secrets replace environment-variable
-# credentials. Secrets are mounted as read-only files at /run/secrets/<name>
-# inside each container and are never visible in `docker inspect` output,
-# container logs, or the image layers.
+# Docker Secrets replace env-var credentials. Secrets are mounted as read-only
+# files at /run/secrets/<name> and are never visible in `docker inspect` output.
 #
 # Usage:
 #   ./scripts/init-secrets.sh          # generate ./secrets/*.txt
 #   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 #
-# The backend reads secrets via backend/src/config/secrets.ts which checks
-# /run/secrets/<name> before falling back to environment variables.
+# Secrets are read by backend/src/config/secrets.ts at runtime.
 
 secrets:
   db_password:
@@ -21,7 +18,6 @@ secrets:
     file: ./secrets/master_key.txt
 
 services:
-
   db:
     environment:
       POSTGRES_USER: securevault
@@ -34,8 +30,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
-      # DATABASE_URL: password is a placeholder — secrets.ts replaces __DB_PASSWORD__
-      # at runtime with the content of /run/secrets/db_password (Paper [15]).
+      # __DB_PASSWORD__ is replaced at runtime by secrets.ts with /run/secrets/db_password.
       DATABASE_URL: postgresql://securevault:__DB_PASSWORD__@db:5432/securevault
       ML_SERVICE_URL: http://ml-service:8000
       # JWT_SECRET and MASTER_ENCRYPTION_KEY are NOT set here.
@@ -44,14 +39,14 @@ services:
       - db_password
       - jwt_secret
       - master_key
-    # Production: no host port — put a reverse proxy (nginx/Caddy) in front
+    # Production: no host port  put a reverse proxy (nginx/Caddy) in front
     ports: []
 
   frontend:
     # Production: serve on standard port 80 (mapped from internal 8080)
     ports:
-      - '80:8080'
+      - "80:8080"
 
   ml-service:
-    # No secrets needed — model weights are baked into the image
+    # No secrets needed  model weights are baked into the image
     environment: {}

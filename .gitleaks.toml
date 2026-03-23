@@ -1,7 +1,4 @@
-# .gitleaks.toml — Gitleaks configuration for SecureVault
-#
-# Paper [14] (Prates & Pereira): secrets scanning is a key DevSecOps practice.
-# Gitleaks scans every commit for accidentally committed credentials.
+# .gitleaks.toml   Gitleaks configuration for SecureVault
 #
 # Rules detect: JWT secrets, private keys, AWS keys, database URLs with passwords,
 #               hex-encoded keys matching our key length patterns.
@@ -53,7 +50,7 @@ paths = [
   # Test fixtures with placeholder values
   '''.*\.test\.(ts|js)''',
   '''.*\.spec\.(ts|js)''',
-  # The secrets directory is gitignored — if somehow committed, detect it
+  # The secrets directory is gitignored   if somehow committed, detect it
   # (do NOT add secrets/ here)
 ]
 
@@ -61,7 +58,7 @@ paths = [
 regexes = [
   # All-zeros dev master key explicitly flagged in CLAUDE.md as dev-only
   '''0{64}''',
-  # Dev JWT secret — contains the word "dev" and "change_in_production"
+  # Dev JWT secret   contains the word "dev" and "change_in_production"
   '''dev_jwt_secret_change_in_production''',
   # Prisma shadow DB URL placeholder
   '''postgresql://user:pass@''',

@@ -40,7 +40,7 @@ async function uploadFile(
   content: string,
   filename = 'test.txt',
 ): Promise<string> {
-  // ML scan is mocked — returns benign for all uploads
+  // ML scan is mocked   returns benign for all uploads
   jest.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
     ok: true,
     json: async () => ({ is_xss: false, confidence: 0.01 }),
@@ -144,7 +144,7 @@ describe('Authorization enforcement', () => {
     const fileId = await uploadFile(userA.token, userA.masterKeyB64, 'private')
 
     // User B tries to download with User B's own master key (different ECDH key)
-    // The file key was wrapped for User A — User B's master key cannot unwrap it
+    // The file key was wrapped for User A   User B's master key cannot unwrap it
     const res = await request(app)
       .get(`/api/files/${fileId}/download`)
       .set('Authorization', `Bearer ${userB.token}`)

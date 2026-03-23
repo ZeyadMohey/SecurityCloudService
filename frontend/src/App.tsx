@@ -16,7 +16,7 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-// App — root router
+// App   root router
 export default function App() {
   return (
     <BrowserRouter>
