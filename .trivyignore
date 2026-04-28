@@ -1,0 +1,18 @@
+# .trivyignore — Accepted CVEs with no upstream fix available
+#
+# Review date: 2026-07-28
+# Each entry must be re-evaluated when a fixed version becomes available in Debian.
+
+# CVE-2025-69720: ncurses buffer overflow (libncursesw6, libtinfo6, ncurses-base, ncurses-bin)
+# Status: No fixed version in Debian 13.4 as of 2026-04-28.
+# Risk: ncurses is a terminal library. The ML service runs as a non-root user with a
+#       read-only filesystem, no interactive terminal, and no external network access
+#       (ml-net internal:true). Exploitability in this context is negligible.
+CVE-2025-69720
+
+# CVE-2026-29111: systemd arbitrary code execution via IPC (libsystemd0, libudev1)
+# Status: No fixed version in Debian 13.4 as of 2026-04-28.
+# Risk: systemd is not running inside the container — only the shared libraries are present
+#       as transitive dependencies. The IPC attack vector requires a running systemd instance,
+#       which does not exist in this container. The ML service has no external network access.
+CVE-2026-29111
