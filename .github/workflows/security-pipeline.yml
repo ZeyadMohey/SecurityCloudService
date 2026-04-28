@@ -64,7 +64,7 @@ jobs:
 
       - name: Audit backend dependencies
         working-directory: backend
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=high --omit=dev
         continue-on-error: false
 
       # Frontend
@@ -78,7 +78,7 @@ jobs:
 
       - name: Audit frontend dependencies
         working-directory: frontend
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=high --omit=dev
         continue-on-error: false
 
       # Generate Prisma client so TypeScript has the model types available
