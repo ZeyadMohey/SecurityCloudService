@@ -26,7 +26,7 @@ app.use(
   cors({
     origin:
       config.nodeEnv === 'production'
-        ? 'https://securevault.app'
+        ? (process.env['CORS_ORIGIN'] ?? 'https://securevault.app')
         : 'http://localhost:5173',
     credentials: true,
   })
